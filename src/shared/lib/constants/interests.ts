@@ -1,0 +1,43 @@
+/** Приложение A — canonical slugs; user-facing labels live in i18n under `interests.<slug>`. */
+export const INTEREST_TAGS = [
+  'travel',
+  'sports',
+  'yoga',
+  'running',
+  'cycling',
+  'swimming',
+  'hiking',
+  'cooking',
+  'coffee',
+  'wine',
+  'boardGames',
+  'videoGames',
+  'movies',
+  'tvShows',
+  'music',
+  'concerts',
+  'dancing',
+  'photography',
+  'painting',
+  'reading',
+  'books',
+  'languages',
+  'tech',
+  'startups',
+  'psychology',
+  'meditation',
+  'fitness',
+  'yogaRetreats',
+  'nature',
+  'pets',
+  'fashion',
+  'theatre',
+  'volunteering',
+  'cars',
+  'motorcycles',
+  'diy',
+] as const;
+
+export type InterestTag = (typeof INTEREST_TAGS)[number];
+
+export const MAX_INTERESTS_PER_PROFILE = 10;

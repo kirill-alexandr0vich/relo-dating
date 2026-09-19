@@ -5,15 +5,22 @@ interface CheckboxProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   label: string;
+  disabled?: boolean;
 }
 
-export function Checkbox({ checked, onChange, label }: CheckboxProps) {
+export function Checkbox({
+  checked,
+  onChange,
+  label,
+  disabled,
+}: CheckboxProps) {
   return (
     <Pressable
-      style={styles.row}
-      onPress={() => onChange(!checked)}
+      style={[styles.row, disabled && styles.rowDisabled]}
+      onPress={() => !disabled && onChange(!checked)}
+      disabled={disabled}
       accessibilityRole="checkbox"
-      accessibilityState={{ checked }}
+      accessibilityState={{ checked, disabled }}
     >
       <View style={[styles.box, checked && styles.boxChecked]}>
         {checked && <Text style={styles.checkmark}>✓</Text>}
@@ -50,5 +57,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: 10,
+  },
+  rowDisabled: {
+    opacity: 0.4,
   },
 });

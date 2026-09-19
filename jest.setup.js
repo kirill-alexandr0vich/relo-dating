@@ -30,6 +30,13 @@ jest.mock('@react-native-firebase/firestore', () => {
   return { __esModule: true, default: firestore };
 });
 
+jest.mock('@react-native-firebase/functions', () => {
+  const functions = jest.fn(() => ({
+    httpsCallable: jest.fn(() => jest.fn()),
+  }));
+  return { __esModule: true, default: functions };
+});
+
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: {
     configure: jest.fn(),

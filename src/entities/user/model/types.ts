@@ -1,3 +1,5 @@
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+
 export type Gender = 'male' | 'female' | 'other';
 export type LookingFor = 'male' | 'female' | 'all';
 
@@ -24,7 +26,8 @@ export interface UserRecord {
   premium?: boolean;
   premiumExpiresAt?: number;
   swipesUsedToday?: number;
-  swipesResetAt?: number;
+  /** Written by the recordSwipe Cloud Function as a real Firestore Timestamp, not a plain number. */
+  swipesResetAt?: FirebaseFirestoreTypes.Timestamp;
   callMinutesUsedToday?: number;
   callMinutesResetAt?: number;
   allowFriendMessagesWithoutMatch: boolean;
@@ -35,6 +38,13 @@ export interface UserRecord {
   lastActiveAt: number;
   blockedUserIds: string[];
   hereSince?: string;
+  /**
+   * Not part of the TZ's documented schema (Приложение B) — an
+   * implementation detail added to support 4.2.1's random feed shuffling
+   * via a Firestore range query (`orderBy('sortKey').startAt(random)`).
+   * Set once, alongside the required fields, when registration completes.
+   */
+  sortKey?: number;
 }
 
 /** A `UserRecord` that has completed the required registration fields (3.2). */

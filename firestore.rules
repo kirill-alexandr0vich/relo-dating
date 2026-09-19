@@ -1,0 +1,60 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Fields owned by Cloud Functions only (12) — never client-writable,
+    // on create or update.
+    function touchesProtectedUserFields() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny([
+        'verified', 'premium', 'premiumExpiresAt',
+        'swipesUsedToday', 'swipesResetAt',
+        'callMinutesUsedToday', 'callMinutesResetAt',
+        'autoHidden', 'autoHiddenAt'
+      ]);
+    }
+
+    match /users/{uid} {
+      // Candidate discovery for the swipe feed needs to read other users'
+      // profiles; there is no per-field read restriction in Firestore
+      // rules, so this is a known simplification (see README).
+      allow read: if isSignedIn();
+
+      allow create: if isOwner(uid)
+        && !('verified' in request.resource.data)
+        && !('premium' in request.resource.data)
+        && !('premiumExpiresAt' in request.resource.data)
+        && !('swipesUsedToday' in request.resource.data)
+        && !('swipesResetAt' in request.resource.data)
+        && !('callMinutesUsedToday' in request.resource.data)
+        && !('callMinutesResetAt' in request.resource.data)
+        && !('autoHidden' in request.resource.data)
+        && !('autoHiddenAt' in request.resource.data);
+
+      allow update: if isOwner(uid) && !touchesProtectedUserFields();
+
+      allow delete: if false;
+    }
+
+    // Only the recordSwipe Cloud Function may write here (it runs as
+    // admin and bypasses these rules) — this is what makes the daily
+    // swipe limit and match creation trustworthy; see functions/src/swipes.
+    match /swipes/{swipeId} {
+      allow read: if isSignedIn() && resource.data.swiperId == request.auth.uid;
+      allow write: if false;
+    }
+
+    // Only the onSwipeCreated Cloud Function may write here.
+    match /matches/{matchId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.userIds;
+      allow write: if false;
+    }
+  }
+}

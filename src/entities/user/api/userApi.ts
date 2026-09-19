@@ -5,6 +5,11 @@ function userDoc(uid: string) {
   return firestore().collection('users').doc(uid);
 }
 
+export async function fetchUserRecord(uid: string): Promise<UserRecord | null> {
+  const snapshot = await userDoc(uid).get();
+  return snapshot.exists ? (snapshot.data() as UserRecord) : null;
+}
+
 export function subscribeToUserRecord(
   uid: string,
   onChange: (record: UserRecord | null) => void,
@@ -47,5 +52,10 @@ export async function saveRequiredProfileFields(
   uid: string,
   fields: { name: string; country: string; nativeLanguage: string },
 ): Promise<void> {
-  await userDoc(uid).set(fields, { merge: true });
+  // sortKey seeds the swipe feed's random-shuffle cursor (4.2.1) — set
+  // once here so every fully-registered user is discoverable in feeds.
+  await userDoc(uid).set(
+    { ...fields, sortKey: Math.random() },
+    { merge: true },
+  );
 }
