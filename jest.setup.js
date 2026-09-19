@@ -37,6 +37,19 @@ jest.mock('@react-native-firebase/functions', () => {
   return { __esModule: true, default: functions };
 });
 
+jest.mock('@react-native-firebase/storage', () => {
+  const storage = jest.fn(() => ({
+    ref: jest.fn(() => ({
+      putFile: jest.fn(() => Promise.resolve()),
+    })),
+  }));
+  return { __esModule: true, default: storage };
+});
+
+jest.mock('react-native-image-picker', () => ({
+  launchImageLibrary: jest.fn(() => Promise.resolve({ didCancel: true })),
+}));
+
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: {
     configure: jest.fn(),

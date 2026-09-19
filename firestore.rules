@@ -10,15 +10,19 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    // Fields owned by Cloud Functions only (12) — never client-writable,
-    // on create or update.
-    function touchesProtectedUserFields() {
-      return request.resource.data.diff(resource.data).affectedKeys().hasAny([
+    // Fields owned by Cloud Functions only — never client-writable, on
+    // create or update. verified/premium/.../autoHidden are Cloud
+    // Function counters and flags (12); name/bio/avatarUrls are blocked
+    // for a different reason — they must pass moderation before being
+    // saved (7.2), which only submitProfileText/submitProfilePhoto do.
+    function protectedUserFields() {
+      return [
         'verified', 'premium', 'premiumExpiresAt',
         'swipesUsedToday', 'swipesResetAt',
         'callMinutesUsedToday', 'callMinutesResetAt',
-        'autoHidden', 'autoHiddenAt'
-      ]);
+        'autoHidden', 'autoHiddenAt',
+        'name', 'bio', 'avatarUrls'
+      ];
     }
 
     match /users/{uid} {
@@ -28,19 +32,26 @@ service cloud.firestore {
       allow read: if isSignedIn();
 
       allow create: if isOwner(uid)
-        && !('verified' in request.resource.data)
-        && !('premium' in request.resource.data)
-        && !('premiumExpiresAt' in request.resource.data)
-        && !('swipesUsedToday' in request.resource.data)
-        && !('swipesResetAt' in request.resource.data)
-        && !('callMinutesUsedToday' in request.resource.data)
-        && !('callMinutesResetAt' in request.resource.data)
-        && !('autoHidden' in request.resource.data)
-        && !('autoHiddenAt' in request.resource.data);
+        && !request.resource.data.keys().hasAny(protectedUserFields());
 
-      allow update: if isOwner(uid) && !touchesProtectedUserFields();
+      allow update: if isOwner(uid)
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedUserFields());
 
       allow delete: if false;
+    }
+
+    // Username uniqueness reservation (5.2/3.2) — doc id is the
+    // lowercased username, `uid` is who holds it. No moderation needed
+    // (out of scope per 7.2's field list), just format + ownership.
+    match /usernames/{username} {
+      allow read: if isSignedIn();
+
+      allow create: if isOwner(request.resource.data.uid)
+        && username == username.lower()
+        && username.matches('^[a-z0-9_]{3,20}$');
+
+      allow update: if false;
+      allow delete: if isOwner(resource.data.uid);
     }
 
     // Only the recordSwipe Cloud Function may write here (it runs as

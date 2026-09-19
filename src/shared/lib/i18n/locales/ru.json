@@ -58,7 +58,43 @@
     "invalid_phone_number": "Похоже, это некорректный номер телефона.",
     "code_expired": "Код истёк. Запросите новый.",
     "permission_denied": "Недостаточно прав для этого действия.",
-    "unknown_error": "Что-то пошло не так. Попробуйте снова."
+    "unknown_error": "Что-то пошло не так. Попробуйте снова.",
+    "moderation_rejected_name": "Это имя недопустимо. Пожалуйста, выберите другое.",
+    "moderation_rejected_bio": "Этот текст «о себе» недопустим. Отредактируйте и попробуйте снова.",
+    "moderation_rejected_photo": "Это фото недопустимо. Пожалуйста, выберите другое."
+  },
+  "profile": {
+    "title": "Профиль",
+    "photosTitle": "Фото",
+    "mainPhotoHint": "Нажмите на фото, чтобы сделать его главным. Минимум 1 фото обязательно, чтобы попасть в ленту свайпов.",
+    "mainPhoto": "Главное",
+    "maxPhotosReached": "Можно загрузить до 6 фото.",
+    "nameLabel": "Имя",
+    "usernameLabel": "Юзернейм",
+    "usernamePlaceholder": "your_username",
+    "usernameTaken": "Этот юзернейм уже занят.",
+    "bioLabel": "О себе",
+    "bioPlaceholder": "Расскажите немного о себе",
+    "ageLabel": "Возраст",
+    "genderLabel": "Пол",
+    "gender": {
+      "male": "Мужской",
+      "female": "Женский",
+      "other": "Другое"
+    },
+    "lookingForLabel": "Кого ищет",
+    "lookingFor": {
+      "male": "Мужчин",
+      "female": "Женщин",
+      "all": "Всех"
+    },
+    "hereSinceLabel": "Здесь с",
+    "hereSincePlaceholder": "Выберите месяц и год",
+    "hereSinceSearchPlaceholder": "Поиск",
+    "interestsLabel": "Увлечения",
+    "save": "Сохранить",
+    "saved": "Профиль сохранён",
+    "signOut": "Выйти"
   },
   "swipes": {
     "filters": "Фильтры",

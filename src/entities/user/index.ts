@@ -9,4 +9,16 @@ export {
   subscribeToUserRecord,
   ensureUserRecordExists,
   saveRequiredProfileFields,
+  saveOptionalProfileFields,
 } from './api/userApi';
+export type { OptionalProfileFields } from './api/userApi';
+export { claimUsername } from './api/usernameApi';
+export type { ClaimUsernameResult } from './api/usernameApi';
+export {
+  submitProfileText,
+  submitProfilePhoto,
+  removeProfilePhoto,
+  reorderProfilePhotos,
+  MODERATION_REJECTED_MESSAGE,
+  MAX_PHOTOS_REACHED_MESSAGE,
+} from './api/moderationApi';

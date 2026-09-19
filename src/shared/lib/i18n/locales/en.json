@@ -58,7 +58,43 @@
     "invalid_phone_number": "This phone number looks invalid.",
     "code_expired": "This code has expired. Request a new one.",
     "permission_denied": "You don't have permission to do that.",
-    "unknown_error": "Something went wrong. Please try again."
+    "unknown_error": "Something went wrong. Please try again.",
+    "moderation_rejected_name": "This name isn't allowed. Please choose another one.",
+    "moderation_rejected_bio": "This bio isn't allowed. Please edit it and try again.",
+    "moderation_rejected_photo": "This photo isn't allowed. Please choose another one."
+  },
+  "profile": {
+    "title": "Profile",
+    "photosTitle": "Photos",
+    "mainPhotoHint": "Tap a photo to make it your main one. At least 1 photo is required to appear in Swipes.",
+    "mainPhoto": "Main",
+    "maxPhotosReached": "You can have up to 6 photos.",
+    "nameLabel": "Name",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "your_username",
+    "usernameTaken": "This username is already taken.",
+    "bioLabel": "About me",
+    "bioPlaceholder": "Tell people a bit about yourself",
+    "ageLabel": "Age",
+    "genderLabel": "Gender",
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "lookingForLabel": "Looking for",
+    "lookingFor": {
+      "male": "Men",
+      "female": "Women",
+      "all": "Everyone"
+    },
+    "hereSinceLabel": "Here since",
+    "hereSincePlaceholder": "Select month and year",
+    "hereSinceSearchPlaceholder": "Search",
+    "interestsLabel": "Interests",
+    "save": "Save",
+    "saved": "Profile saved",
+    "signOut": "Sign out"
   },
   "swipes": {
     "filters": "Filters",

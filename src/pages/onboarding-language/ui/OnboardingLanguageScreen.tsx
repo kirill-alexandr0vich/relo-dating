@@ -5,7 +5,7 @@ import { Button } from 'shared/ui/Button';
 import { SelectField } from 'shared/ui/SelectField';
 import { LANGUAGES } from 'shared/lib/constants/languages';
 import { handleFirebaseError } from 'shared/api/handleFirebaseError';
-import { useUserStore } from 'entities/user';
+import { MODERATION_REJECTED_MESSAGE, useUserStore } from 'entities/user';
 import {
   useRegistrationDraftStore,
   submitRequiredProfileFields,
@@ -43,8 +43,14 @@ export function OnboardingLanguageScreen() {
       // RootNavigator switches to the main tabs once AuthProvider's
       // Firestore subscription picks up the now-complete record.
     } catch (error) {
-      const handled = handleFirebaseError(error);
-      Alert.alert(t('auth.title'), t(`errors.${handled.translationKey}`));
+      if (
+        (error as { message?: string }).message === MODERATION_REJECTED_MESSAGE
+      ) {
+        Alert.alert(t('auth.title'), t('errors.moderation_rejected_name'));
+      } else {
+        const handled = handleFirebaseError(error);
+        Alert.alert(t('auth.title'), t(`errors.${handled.translationKey}`));
+      }
     } finally {
       setIsSubmitting(false);
     }
