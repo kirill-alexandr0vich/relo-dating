@@ -4,5 +4,60 @@
     "swipes": "Swipes",
     "friends": "Friends",
     "messages": "Messages"
+  },
+  "common": {
+    "next": "Next",
+    "back": "Back",
+    "cancel": "Cancel"
+  },
+  "auth": {
+    "title": "Welcome",
+    "ageConfirmation": "I confirm that I am 18 years of age or older",
+    "ageConfirmationHint": "You must confirm this before you can sign in",
+    "continueWithApple": "Continue with Apple",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithEmail": "Continue with email",
+    "continueWithPhone": "Continue with phone number",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "switchToSignUp": "Don't have an account? Sign up",
+    "switchToSignIn": "Already have an account? Sign in",
+    "phoneLabel": "Phone number",
+    "phonePlaceholder": "+995 555 00 00 00",
+    "sendCode": "Send code",
+    "phoneCodeLabel": "Confirmation code",
+    "confirmCode": "Confirm",
+    "resendCode": "Resend code",
+    "linkingTitle": "You already have an account",
+    "linkingDescription": "An account with {{email}} already exists. Sign in the way you used before to link this new sign-in method.",
+    "linkingSuccess": "Sign-in methods linked successfully"
+  },
+  "registration": {
+    "nameTitle": "What's your name?",
+    "namePlaceholder": "Your name",
+    "countryTitle": "Where do you currently live?",
+    "countryPlaceholder": "Select a country",
+    "countrySearchPlaceholder": "Search countries",
+    "languageTitle": "What's your native language?",
+    "languagePlaceholder": "Select a language",
+    "languageSearchPlaceholder": "Search languages"
+  },
+  "errors": {
+    "account_exists_with_different_credential": "An account with this email already exists. Sign in using the original method to link this one.",
+    "invalid_credential": "This sign-in method is no longer valid. Please try again.",
+    "network_error": "Network error. Check your connection and try again.",
+    "too_many_requests": "Too many attempts. Please try again later.",
+    "email_already_in_use": "This email is already registered. Try signing in instead.",
+    "invalid_email": "This email address looks invalid.",
+    "weak_password": "Password must be at least 6 characters.",
+    "user_not_found": "No account found with this email.",
+    "wrong_password": "Incorrect password.",
+    "invalid_verification_code": "The code you entered is incorrect.",
+    "invalid_phone_number": "This phone number looks invalid.",
+    "code_expired": "This code has expired. Request a new one.",
+    "permission_denied": "You don't have permission to do that.",
+    "unknown_error": "Something went wrong. Please try again."
   }
 }

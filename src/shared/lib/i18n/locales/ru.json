@@ -4,5 +4,60 @@
     "swipes": "Свайпы",
     "friends": "Друзья",
     "messages": "Сообщения"
+  },
+  "common": {
+    "next": "Далее",
+    "back": "Назад",
+    "cancel": "Отмена"
+  },
+  "auth": {
+    "title": "Добро пожаловать",
+    "ageConfirmation": "Подтверждаю, что мне есть 18 лет",
+    "ageConfirmationHint": "Это нужно подтвердить перед входом",
+    "continueWithApple": "Продолжить с Apple",
+    "continueWithGoogle": "Продолжить с Google",
+    "continueWithEmail": "Продолжить с email",
+    "continueWithPhone": "Продолжить с номером телефона",
+    "emailLabel": "Email",
+    "passwordLabel": "Пароль",
+    "signIn": "Войти",
+    "signUp": "Зарегистрироваться",
+    "switchToSignUp": "Нет аккаунта? Зарегистрироваться",
+    "switchToSignIn": "Уже есть аккаунт? Войти",
+    "phoneLabel": "Номер телефона",
+    "phonePlaceholder": "+995 555 00 00 00",
+    "sendCode": "Отправить код",
+    "phoneCodeLabel": "Код подтверждения",
+    "confirmCode": "Подтвердить",
+    "resendCode": "Отправить код повторно",
+    "linkingTitle": "У вас уже есть аккаунт",
+    "linkingDescription": "Аккаунт с {{email}} уже существует. Войдите способом, использованным ранее, чтобы привязать новый метод входа.",
+    "linkingSuccess": "Способы входа успешно объединены"
+  },
+  "registration": {
+    "nameTitle": "Как вас зовут?",
+    "namePlaceholder": "Ваше имя",
+    "countryTitle": "В какой стране вы сейчас живёте?",
+    "countryPlaceholder": "Выберите страну",
+    "countrySearchPlaceholder": "Поиск страны",
+    "languageTitle": "Какой у вас родной язык?",
+    "languagePlaceholder": "Выберите язык",
+    "languageSearchPlaceholder": "Поиск языка"
+  },
+  "errors": {
+    "account_exists_with_different_credential": "Аккаунт с этим email уже существует. Войдите способом, использованным ранее, чтобы привязать новый.",
+    "invalid_credential": "Этот способ входа больше не действителен. Попробуйте снова.",
+    "network_error": "Ошибка сети. Проверьте подключение и попробуйте снова.",
+    "too_many_requests": "Слишком много попыток. Попробуйте позже.",
+    "email_already_in_use": "Этот email уже зарегистрирован. Попробуйте войти.",
+    "invalid_email": "Похоже, это некорректный email.",
+    "weak_password": "Пароль должен быть не короче 6 символов.",
+    "user_not_found": "Аккаунт с этим email не найден.",
+    "wrong_password": "Неверный пароль.",
+    "invalid_verification_code": "Введён неверный код.",
+    "invalid_phone_number": "Похоже, это некорректный номер телефона.",
+    "code_expired": "Код истёк. Запросите новый.",
+    "permission_denied": "Недостаточно прав для этого действия.",
+    "unknown_error": "Что-то пошло не так. Попробуйте снова."
   }
 }
