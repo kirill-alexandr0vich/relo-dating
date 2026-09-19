@@ -21,5 +21,22 @@ service firebase.storage {
       allow read: if true;
       allow write: if false;
     }
+
+    // 6.1/6.3 — staging area for a chat photo/voice message awaiting
+    // sendChatMedia (moderation for photos, connection check for both).
+    // 15MB covers a several-minute voice clip; photos are already
+    // compressed client-side (12) well under this.
+    match /chats/{chatId}/pending/{uid}/{fileName} {
+      allow read, write: if isOwner(uid) && request.resource.size < 15 * 1024 * 1024;
+    }
+
+    // Published chat media — see sendChatMedia.ts's doc comment for why
+    // this is public-by-unguessable-URL rather than participant-gated:
+    // a stricter rule would need a cross-service Firestore lookup that
+    // can't be verified without a live deploy in this environment.
+    match /chats/{chatId}/media/{fileName} {
+      allow read: if true;
+      allow write: if false;
+    }
   }
 }

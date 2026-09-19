@@ -54,6 +54,52 @@ export async function sendChatMessage(
   return response.data.messageId;
 }
 
+/** 6.1/6.3 — moderated + connection-checked server-side; see functions/src/chat/sendChatMedia. */
+export async function sendChatPhoto(
+  chatId: string,
+  pendingPath: string,
+): Promise<string> {
+  const callable = functions().httpsCallable<
+    { chatId: string; pendingPath: string; type: 'image' },
+    { messageId: string; url: string }
+  >('sendChatMedia');
+  const response = await callable({ chatId, pendingPath, type: 'image' });
+  return response.data.url;
+}
+
+/** 6.1/6.3 — no automated moderation for voice; see functions/src/chat/sendChatMedia's doc comment. */
+export async function sendChatVoice(
+  chatId: string,
+  pendingPath: string,
+  durationSeconds: number,
+): Promise<string> {
+  const callable = functions().httpsCallable<
+    {
+      chatId: string;
+      pendingPath: string;
+      type: 'voice';
+      durationSeconds: number;
+    },
+    { messageId: string; url: string }
+  >('sendChatMedia');
+  const response = await callable({
+    chatId,
+    pendingPath,
+    type: 'voice',
+    durationSeconds,
+  });
+  return response.data.url;
+}
+
+/** 6.2 — stamps my own read position on this chat; see functions/src/chat/markChatRead. */
+export async function markChatRead(chatId: string): Promise<void> {
+  const callable = functions().httpsCallable<
+    { chatId: string },
+    { marked: boolean }
+  >('markChatRead');
+  await callable({ chatId });
+}
+
 /** 6.2 — removes the shared match/friendship server-side; see functions/src/chat/blockUser. */
 export async function blockUser(targetUid: string): Promise<void> {
   const callable = functions().httpsCallable<

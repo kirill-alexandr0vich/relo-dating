@@ -5,5 +5,5 @@ export {
   removeProfilePhoto,
   reorderProfilePhotos,
 } from './moderation';
-export { sendMessage, blockUser } from './chat';
+export { sendMessage, sendChatMedia, markChatRead, blockUser } from './chat';
 export { onReportWritten } from './reports';

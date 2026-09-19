@@ -12,14 +12,22 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
+import FastImage from 'react-native-fast-image';
 import {
   subscribeToMessages,
   sendChatMessage,
+  markChatRead,
   blockUser,
+  formatDuration,
   type Message,
 } from 'entities/chat';
 import { addFriendFromMatch } from 'entities/friend';
 import { useUserStore, useUserRecords } from 'entities/user';
+import {
+  useChatPhotoUpload,
+  useChatVoiceRecorder,
+  useVoicePlayback,
+} from 'features/chat-media';
 import { ReportModal } from 'features/report';
 import { handleFirebaseError } from 'shared/api/handleFirebaseError';
 import { Button } from 'shared/ui/Button';
@@ -49,11 +57,32 @@ export function ChatConversationScreen() {
   const [reportSnapshot, setReportSnapshot] = useState<string | null>(null);
   const [isReportingUser, setIsReportingUser] = useState(false);
 
+  const { isUploading: isUploadingPhoto, pickAndSendPhoto } =
+    useChatPhotoUpload(chatId, uid);
+  const {
+    isRecording,
+    isSending: isSendingVoice,
+    elapsedSeconds,
+    startRecording,
+    cancelRecording,
+    stopAndSendRecording,
+  } = useChatVoiceRecorder(chatId, uid);
+  const voicePlayback = useVoicePlayback();
+
   useEffect(() => {
     return subscribeToMessages(chatId, setMessages, error => {
       console.error('Failed to subscribe to messages', error);
     });
   }, [chatId]);
+
+  useEffect(() => {
+    // 6.2 — mark read on opening the chat, and again whenever a new
+    // message arrives while it's still open (no separate "seen" event
+    // needed for the sender's own messages — they're stamped on send).
+    markChatRead(chatId).catch(error => {
+      console.error('Failed to mark chat read', error);
+    });
+  }, [chatId, messages.length]);
 
   useEffect(() => {
     // 5 — "Добавить в друзья" from a match's chat is only offered when
@@ -78,6 +107,23 @@ export function ChatConversationScreen() {
     }
   }
 
+  function showSendError(error: unknown) {
+    const message = (error as { message?: string }).message;
+    if (message === 'moderation_rejected') {
+      Alert.alert(t('messages.title'), t('errors.moderation_rejected_message'));
+    } else if (message && CONNECTION_ERROR_REASONS.includes(message)) {
+      Alert.alert(
+        t('messages.title'),
+        t(`messages.connectionError.${message}`),
+      );
+    } else if (message === 'mic_permission_denied') {
+      Alert.alert(t('messages.title'), t('errors.mic_permission_denied'));
+    } else {
+      const handled = handleFirebaseError(error);
+      Alert.alert(t('messages.title'), t(`errors.${handled.translationKey}`));
+    }
+  }
+
   async function handleSend() {
     const trimmed = text.trim();
     if (!trimmed || isSending) {
@@ -88,23 +134,33 @@ export function ChatConversationScreen() {
       await sendChatMessage(chatId, trimmed);
       setText('');
     } catch (error) {
-      const message = (error as { message?: string }).message;
-      if (message === 'moderation_rejected') {
-        Alert.alert(
-          t('messages.title'),
-          t('errors.moderation_rejected_message'),
-        );
-      } else if (message && CONNECTION_ERROR_REASONS.includes(message)) {
-        Alert.alert(
-          t('messages.title'),
-          t(`messages.connectionError.${message}`),
-        );
-      } else {
-        const handled = handleFirebaseError(error);
-        Alert.alert(t('messages.title'), t(`errors.${handled.translationKey}`));
-      }
+      showSendError(error);
     } finally {
       setIsSending(false);
+    }
+  }
+
+  async function handleAttachPhoto() {
+    try {
+      await pickAndSendPhoto();
+    } catch (error) {
+      showSendError(error);
+    }
+  }
+
+  async function handleStartRecording() {
+    try {
+      await startRecording();
+    } catch (error) {
+      showSendError(error);
+    }
+  }
+
+  async function handleStopAndSendRecording() {
+    try {
+      await stopAndSendRecording();
+    } catch (error) {
+      showSendError(error);
     }
   }
 
@@ -116,6 +172,31 @@ export function ChatConversationScreen() {
       const handled = handleFirebaseError(error);
       Alert.alert(t('messages.title'), t(`errors.${handled.translationKey}`));
     }
+  }
+
+  function renderMessageContent(item: Message, isMine: boolean) {
+    if (item.type === 'image') {
+      return (
+        <FastImage source={{ uri: item.content }} style={styles.mediaImage} />
+      );
+    }
+    if (item.type === 'voice') {
+      const isPlaying = voicePlayback.playingUrl === item.content;
+      return (
+        <Pressable onPress={() => voicePlayback.toggle(item.content)}>
+          <Text
+            style={isMine ? styles.bubbleTextMine : styles.bubbleTextTheirs}
+          >
+            {isPlaying ? '⏸' : '▶'} {formatDuration(item.durationSeconds ?? 0)}
+          </Text>
+        </Pressable>
+      );
+    }
+    return (
+      <Text style={isMine ? styles.bubbleTextMine : styles.bubbleTextTheirs}>
+        {item.content}
+      </Text>
+    );
   }
 
   return (
@@ -144,42 +225,76 @@ export function ChatConversationScreen() {
         keyExtractor={message => message.id}
         inverted
         contentContainerStyle={styles.messageList}
-        renderItem={({ item }) => (
-          <Pressable
-            onLongPress={() =>
-              item.senderId !== uid && setReportSnapshot(item.content)
-            }
-            style={[
-              styles.bubble,
-              item.senderId === uid ? styles.bubbleMine : styles.bubbleTheirs,
-            ]}
-          >
-            <Text
-              style={
-                item.senderId === uid
-                  ? styles.bubbleTextMine
-                  : styles.bubbleTextTheirs
-              }
+        renderItem={({ item }) => {
+          const isMine = item.senderId === uid;
+          return (
+            <Pressable
+              onLongPress={() => !isMine && setReportSnapshot(item.content)}
+              style={[
+                styles.bubble,
+                isMine ? styles.bubbleMine : styles.bubbleTheirs,
+              ]}
             >
-              {item.content}
-            </Text>
-          </Pressable>
-        )}
+              {renderMessageContent(item, isMine)}
+            </Pressable>
+          );
+        }}
       />
 
       <View style={styles.composer}>
-        <View style={styles.composerInput}>
-          <TextField
-            value={text}
-            onChangeText={setText}
-            placeholder={t('messages.placeholder')}
-          />
-        </View>
-        <Button
-          label={t('messages.send')}
-          onPress={handleSend}
-          disabled={isSending || !text.trim()}
-        />
+        {isRecording ? (
+          <View style={styles.recordingRow}>
+            <Text style={styles.recordingLabel}>
+              {t('messages.recording')} {formatDuration(elapsedSeconds)}
+            </Text>
+            <Text
+              style={styles.cancelRecordingLink}
+              onPress={cancelRecording}
+              accessibilityLabel={t('messages.cancelRecording')}
+            >
+              ✕
+            </Text>
+            <Button
+              label={t('messages.send')}
+              onPress={handleStopAndSendRecording}
+            />
+          </View>
+        ) : (
+          <>
+            <Pressable
+              style={styles.mediaButton}
+              onPress={handleAttachPhoto}
+              disabled={isUploadingPhoto}
+              accessibilityLabel={t('messages.attachPhoto')}
+            >
+              <Text style={styles.mediaButtonText}>
+                {isUploadingPhoto ? '…' : '📎'}
+              </Text>
+            </Pressable>
+            <View style={styles.composerInput}>
+              <TextField
+                value={text}
+                onChangeText={setText}
+                placeholder={t('messages.placeholder')}
+              />
+            </View>
+            <Pressable
+              style={styles.mediaButton}
+              onPress={handleStartRecording}
+              disabled={isSendingVoice}
+              accessibilityLabel={t('messages.recordVoice')}
+            >
+              <Text style={styles.mediaButtonText}>
+                {isSendingVoice ? '…' : '🎤'}
+              </Text>
+            </Pressable>
+            <Button
+              label={t('messages.send')}
+              onPress={handleSend}
+              disabled={isSending || !text.trim()}
+            />
+          </>
+        )}
       </View>
 
       <ReportModal
@@ -233,6 +348,11 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: '#F0F0F0',
   },
+  cancelRecordingLink: {
+    color: '#FF3B30',
+    fontSize: 20,
+    fontWeight: '700',
+  },
   composer: {
     alignItems: 'flex-end',
     flexDirection: 'row',
@@ -258,7 +378,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
+  mediaButton: {
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+    width: 32,
+  },
+  mediaButtonText: {
+    fontSize: 20,
+  },
+  mediaImage: {
+    borderRadius: 12,
+    height: 180,
+    width: 180,
+  },
   messageList: {
     padding: 16,
+  },
+  recordingLabel: {
+    color: '#5A5A5A',
+    flex: 1,
+    fontSize: 14,
+  },
+  recordingRow: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 16,
   },
 });

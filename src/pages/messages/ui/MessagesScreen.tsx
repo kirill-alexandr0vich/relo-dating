@@ -8,6 +8,7 @@ import FastImage from 'react-native-fast-image';
 import {
   subscribeToChats,
   getOtherParticipant,
+  isChatUnread,
   type Chat,
 } from 'entities/chat';
 import { useUserStore, useUserRecords } from 'entities/user';
@@ -46,6 +47,7 @@ export function MessagesScreen() {
         renderItem={({ item }) => {
           const otherUid = getOtherParticipant(item, uid);
           const profile = profiles[otherUid];
+          const unread = isChatUnread(item, uid);
           return (
             <Pressable
               style={styles.row}
@@ -63,13 +65,22 @@ export function MessagesScreen() {
                 />
               )}
               <View style={styles.rowText}>
-                <Text style={styles.rowName}>{profile?.name ?? '…'}</Text>
+                <Text style={[styles.rowName, unread && styles.rowNameUnread]}>
+                  {profile?.name ?? '…'}
+                </Text>
                 {item.lastMessage && (
-                  <Text style={styles.lastMessage} numberOfLines={1}>
+                  <Text
+                    style={[
+                      styles.lastMessage,
+                      unread && styles.lastMessageUnread,
+                    ]}
+                    numberOfLines={1}
+                  >
                     {item.lastMessage}
                   </Text>
                 )}
               </View>
+              {unread && <View style={styles.unreadDot} />}
             </Pressable>
           );
         }}
@@ -96,6 +107,10 @@ const styles = StyleSheet.create({
     color: '#9A9A9A',
     fontSize: 13,
   },
+  lastMessageUnread: {
+    color: '#1A1A1A',
+    fontWeight: '600',
+  },
   list: {
     paddingBottom: 20,
   },
@@ -109,6 +124,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
+  rowNameUnread: {
+    fontWeight: '700',
+  },
   rowText: {
     flex: 1,
   },
@@ -117,5 +135,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     paddingHorizontal: 20,
     paddingVertical: 12,
+  },
+  unreadDot: {
+    backgroundColor: '#FF5A5F',
+    borderRadius: 5,
+    height: 10,
+    marginLeft: 8,
+    width: 10,
   },
 });

@@ -40,6 +40,8 @@
 	<string>Used to scan a friend's QR code and to take profile/verification photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Used to choose profile photos from your library.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Used to record voice messages in chat.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
