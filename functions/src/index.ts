@@ -6,3 +6,4 @@ export {
   reorderProfilePhotos,
 } from './moderation';
 export { sendMessage, blockUser } from './chat';
+export { onReportWritten } from './reports';

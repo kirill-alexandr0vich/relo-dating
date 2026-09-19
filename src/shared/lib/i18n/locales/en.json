@@ -77,6 +77,7 @@
     "bioLabel": "About me",
     "bioPlaceholder": "Tell people a bit about yourself",
     "ageLabel": "Age",
+    "ageTooYoung": "You must be at least 18.",
     "genderLabel": "Gender",
     "gender": {
       "male": "Male",
@@ -203,6 +204,22 @@
       "blocked": "You can't message this person.",
       "friend_messages_disabled": "This chat is read-only right now — one of you turned off friend messages without a match.",
       "not_connected": "You need to match or become friends before messaging."
+    }
+  },
+  "report": {
+    "title": "Report",
+    "reportUser": "Report",
+    "submit": "Submit report",
+    "submitted": "Thanks — we've received your report.",
+    "commentLabel": "Details",
+    "commentPlaceholder": "What happened?",
+    "reasons": {
+      "spam": "Spam",
+      "harassment": "Harassment or abuse",
+      "fake_profile": "Fake profile",
+      "inappropriate_content": "Inappropriate content",
+      "underage": "Underage user",
+      "other": "Other"
     }
   }
 }

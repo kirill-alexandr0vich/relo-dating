@@ -17,11 +17,12 @@ interface SwipeDeckProps {
   candidates: UserRecord[];
   onSwipeLeft: (candidate: UserRecord) => void;
   onSwipeRight: (candidate: UserRecord) => void;
+  onReport: (candidate: UserRecord) => void;
 }
 
 export const SwipeDeck = forwardRef<SwipeDeckHandle, SwipeDeckProps>(
   function SwipeDeckImpl(
-    { viewer, candidates, onSwipeLeft, onSwipeRight },
+    { viewer, candidates, onSwipeLeft, onSwipeRight, onReport },
     ref,
   ) {
     const topCardRef = useRef<SwipeCardHandle>(null);
@@ -51,6 +52,7 @@ export const SwipeDeck = forwardRef<SwipeDeckHandle, SwipeDeckProps>(
               isTop={isTop}
               onSwipeLeft={() => onSwipeLeft(candidate)}
               onSwipeRight={() => onSwipeRight(candidate)}
+              onReport={() => onReport(candidate)}
             />
           );
         })}

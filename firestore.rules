@@ -25,6 +25,13 @@ service cloud.firestore {
       ];
     }
 
+    // 9 — self-declared age is otherwise a plain client-writable field,
+    // but the minimum-age requirement still has to be enforced somewhere
+    // the client can't bypass.
+    function validAge() {
+      return !('age' in request.resource.data) || request.resource.data.age >= 18;
+    }
+
     match /users/{uid} {
       // Candidate discovery for the swipe feed needs to read other users'
       // profiles; there is no per-field read restriction in Firestore
@@ -32,10 +39,12 @@ service cloud.firestore {
       allow read: if isSignedIn();
 
       allow create: if isOwner(uid)
-        && !request.resource.data.keys().hasAny(protectedUserFields());
+        && !request.resource.data.keys().hasAny(protectedUserFields())
+        && validAge();
 
       allow update: if isOwner(uid)
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedUserFields());
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedUserFields())
+        && validAge();
 
       allow delete: if false;
     }
@@ -117,6 +126,31 @@ service cloud.firestore {
           && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds;
         allow write: if false;
       }
+    }
+
+    // 7.3 — doc id is deterministic per (reporter, target, reason) so a
+    // repeat report from the same person for the same reason updates
+    // their existing doc instead of creating a duplicate. Only the
+    // onReportWritten Cloud Function reads these back (for the
+    // unique-reporter count) and the not-yet-built moderator admin panel
+    // would — never the reporting or reported user themselves.
+    match /reports/{reportId} {
+      allow read: if false;
+
+      allow create: if isSignedIn()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.targetId != request.auth.uid
+        && request.resource.data.reason in
+          ['spam', 'harassment', 'fake_profile', 'inappropriate_content', 'underage', 'other']
+        && request.resource.data.status == 'pending'
+        && reportId == request.auth.uid + '_' + request.resource.data.targetId + '_' + request.resource.data.reason;
+
+      // A repeat report only refreshes createdAt/comment/contentSnapshot.
+      allow update: if isSignedIn()
+        && request.auth.uid == resource.data.reporterId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['createdAt', 'comment', 'contentSnapshot']);
+
+      allow delete: if false;
     }
   }
 }

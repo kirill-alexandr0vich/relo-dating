@@ -35,6 +35,7 @@ interface SwipeCardProps {
   isTop: boolean;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
+  onReport: () => void;
 }
 
 export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(
@@ -46,6 +47,7 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(
       isTop,
       onSwipeLeft,
       onSwipeRight,
+      onReport,
     },
     ref,
   ) {
@@ -157,6 +159,12 @@ export const SwipeCard = forwardRef<SwipeCardHandle, SwipeCardProps>(
               }
             />
           </View>
+        )}
+
+        {isTop && (
+          <Pressable style={styles.reportButton} onPress={onReport}>
+            <Text style={styles.reportButtonText}>⚑</Text>
+          </Pressable>
         )}
 
         {candidate.avatarUrls.length > 1 && (
@@ -297,6 +305,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
     top: 0,
+  },
+  reportButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 15,
+    height: 30,
+    justifyContent: 'center',
+    left: 16,
+    position: 'absolute',
+    top: 16,
+    width: 30,
+  },
+  reportButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
   },
   residencyBadge: {
     alignSelf: 'flex-start',

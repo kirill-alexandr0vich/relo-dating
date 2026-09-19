@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
 import QRCode from 'react-native-qrcode-svg';
 import { Camera } from 'react-native-camera-kit';
-import { lookupUsername, useUserStore } from 'entities/user';
+import { lookupUsername, fetchUserRecord, useUserStore } from 'entities/user';
 import { sendFriendRequest } from 'entities/friend';
 import {
   buildAddFriendDeepLink,
@@ -49,7 +49,10 @@ export function AddFriendScreen() {
     setIsSending(true);
     try {
       const targetUid = await lookupUsername(trimmed);
-      if (!targetUid) {
+      // 7.3 — an auto-hidden user is invisible to search, same as if the
+      // username didn't exist, so as not to reveal they've been hidden.
+      const targetRecord = targetUid ? await fetchUserRecord(targetUid) : null;
+      if (!targetUid || !targetRecord || targetRecord.autoHidden) {
         Alert.alert(t('friends.addFriend'), t('friends.usernameNotFound'));
         return;
       }

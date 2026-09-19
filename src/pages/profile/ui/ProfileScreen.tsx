@@ -32,6 +32,7 @@ import { SelectField } from 'shared/ui/SelectField';
 import { handleFirebaseError } from 'shared/api/handleFirebaseError';
 
 const MAX_PHOTOS = 6;
+const MIN_AGE = 18;
 const GENDERS: Gender[] = ['male', 'female', 'other'];
 const LOOKING_FOR_OPTIONS: LookingFor[] = ['male', 'female', 'all'];
 
@@ -46,6 +47,7 @@ export function ProfileScreen() {
   const [username, setUsername] = useState(record.username ?? '');
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [age, setAge] = useState(record.age?.toString() ?? '');
+  const [ageError, setAgeError] = useState<string | null>(null);
   const [gender, setGender] = useState<Gender | undefined>(record.gender);
   const [lookingFor, setLookingFor] = useState<LookingFor | undefined>(
     record.lookingFor,
@@ -123,8 +125,19 @@ export function ProfileScreen() {
     if (isSaving) {
       return;
     }
-    setIsSaving(true);
     setUsernameError(null);
+    setAgeError(null);
+
+    // 9 — self-declared age below 18 is blocked at save time, separately
+    // from the mandatory 18+ checkbox at sign-up (which doesn't depend
+    // on this optional field being filled in at all).
+    const trimmedAge = age.trim();
+    if (trimmedAge && Number(trimmedAge) < MIN_AGE) {
+      setAgeError(t('profile.ageTooYoung'));
+      return;
+    }
+
+    setIsSaving(true);
     try {
       const trimmedUsername = username.trim();
       if (trimmedUsername && trimmedUsername !== (record.username ?? '')) {
@@ -265,9 +278,13 @@ export function ProfileScreen() {
         <TextField
           label={t('profile.ageLabel')}
           value={age}
-          onChangeText={setAge}
+          onChangeText={text => {
+            setAge(text);
+            setAgeError(null);
+          }}
           keyboardType="number-pad"
           maxLength={3}
+          error={ageError ?? undefined}
         />
       </View>
 

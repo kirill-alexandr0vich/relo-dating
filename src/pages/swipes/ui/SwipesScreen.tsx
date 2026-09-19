@@ -20,6 +20,7 @@ import {
 import { SwipeDeck, type SwipeDeckHandle } from 'widgets/swipe-deck';
 import { SwipeFiltersModal } from 'pages/swipe-filters';
 import { MatchModal } from 'pages/match';
+import { ReportModal } from 'features/report';
 import { handleFirebaseError } from 'shared/api/handleFirebaseError';
 
 export function SwipesScreen() {
@@ -28,6 +29,7 @@ export function SwipesScreen() {
   const record = useUserStore(state => state.record)!;
   const deckRef = useRef<SwipeDeckHandle>(null);
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
+  const [reportTargetId, setReportTargetId] = useState<string | null>(null);
 
   const { candidates, isLoading, isLimitReached, swipe } = useSwipeFeed(record);
   const { notification, dismiss } = useMatchNotifications(record.uid);
@@ -81,6 +83,7 @@ export function SwipesScreen() {
             candidates={candidates}
             onSwipeLeft={candidate => handleSwipe(candidate, 'dislike')}
             onSwipeRight={candidate => handleSwipe(candidate, 'like')}
+            onReport={candidate => setReportTargetId(candidate.uid)}
           />
         ) : isLoading ? (
           <ActivityIndicator size="large" color="#FF5A5F" />
@@ -123,6 +126,13 @@ export function SwipesScreen() {
         onClose={() => setIsFiltersVisible(false)}
       />
       <MatchModal notification={notification} onClose={dismiss} />
+      {reportTargetId && (
+        <ReportModal
+          visible
+          targetId={reportTargetId}
+          onClose={() => setReportTargetId(null)}
+        />
+      )}
     </View>
   );
 }

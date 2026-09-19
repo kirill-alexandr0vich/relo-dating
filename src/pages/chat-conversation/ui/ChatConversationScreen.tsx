@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -13,6 +20,7 @@ import {
 } from 'entities/chat';
 import { addFriendFromMatch } from 'entities/friend';
 import { useUserStore, useUserRecords } from 'entities/user';
+import { ReportModal } from 'features/report';
 import { handleFirebaseError } from 'shared/api/handleFirebaseError';
 import { Button } from 'shared/ui/Button';
 import { TextField } from 'shared/ui/TextField';
@@ -38,6 +46,8 @@ export function ChatConversationScreen() {
   const profiles = useUserRecords([otherUid]);
   const otherProfile = profiles[otherUid];
   const [canAddFriend, setCanAddFriend] = useState(false);
+  const [reportSnapshot, setReportSnapshot] = useState<string | null>(null);
+  const [isReportingUser, setIsReportingUser] = useState(false);
 
   useEffect(() => {
     return subscribeToMessages(chatId, setMessages, error => {
@@ -115,6 +125,9 @@ export function ChatConversationScreen() {
           {t('common.back')}
         </Text>
         <Text style={styles.headerName}>{otherProfile?.name ?? '…'}</Text>
+        <Text style={styles.blockLink} onPress={() => setIsReportingUser(true)}>
+          {t('report.reportUser')}
+        </Text>
         <Text style={styles.blockLink} onPress={handleBlock}>
           {t('messages.block')}
         </Text>
@@ -132,7 +145,10 @@ export function ChatConversationScreen() {
         inverted
         contentContainerStyle={styles.messageList}
         renderItem={({ item }) => (
-          <View
+          <Pressable
+            onLongPress={() =>
+              item.senderId !== uid && setReportSnapshot(item.content)
+            }
             style={[
               styles.bubble,
               item.senderId === uid ? styles.bubbleMine : styles.bubbleTheirs,
@@ -147,7 +163,7 @@ export function ChatConversationScreen() {
             >
               {item.content}
             </Text>
-          </View>
+          </Pressable>
         )}
       />
 
@@ -165,6 +181,20 @@ export function ChatConversationScreen() {
           disabled={isSending || !text.trim()}
         />
       </View>
+
+      <ReportModal
+        visible={isReportingUser}
+        targetId={otherUid}
+        onClose={() => setIsReportingUser(false)}
+      />
+      {reportSnapshot !== null && (
+        <ReportModal
+          visible
+          targetId={otherUid}
+          contentSnapshot={reportSnapshot}
+          onClose={() => setReportSnapshot(null)}
+        />
+      )}
     </SafeAreaView>
   );
 }
