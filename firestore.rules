@@ -67,5 +67,56 @@ service cloud.firestore {
       allow read: if isSignedIn() && request.auth.uid in resource.data.userIds;
       allow write: if false;
     }
+
+    // 5.1 — doc id is the deterministic sorted-uid pair id (same scheme
+    // as /matches and /chats), so it doubles as an uniqueness constraint:
+    // a pair can only ever have one friendship doc.
+    match /friends/{friendshipId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.userIds;
+
+      // A blocked-sender check is intentionally not enforced here (known
+      // simplification, see README) — sendMessage still refuses to let a
+      // blocked pair talk even if a request were somehow accepted.
+      allow create: if isSignedIn()
+        && request.auth.uid in request.resource.data.userIds
+        && request.resource.data.userIds[0] < request.resource.data.userIds[1]
+        && friendshipId == request.resource.data.userIds[0] + '_' + request.resource.data.userIds[1]
+        && request.resource.data.requestedBy == request.auth.uid
+        && (
+          (request.resource.data.addedVia == 'match'
+            && request.resource.data.status == 'accepted'
+            && exists(/databases/$(database)/documents/matches/$(friendshipId)))
+          ||
+          ((request.resource.data.addedVia == 'qr' || request.resource.data.addedVia == 'username_search')
+            && request.resource.data.status == 'pending')
+        );
+
+      // Only the receiving side (not whoever sent the request) can
+      // accept/decline, and only while it's still pending — no re-opening
+      // a declined request.
+      allow update: if isSignedIn()
+        && request.auth.uid in resource.data.userIds
+        && request.auth.uid != resource.data.requestedBy
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['accepted', 'declined']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'respondedAt']);
+
+      // Either side can unfriend/cancel a request at any time.
+      allow delete: if isSignedIn() && request.auth.uid in resource.data.userIds;
+    }
+
+    // 6 — only the sendMessage/blockUser Cloud Functions may write here;
+    // messages must pass moderation and a connection check (match, or
+    // accepted friend with both sides allowing it) before being saved.
+    match /chats/{chatId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow write: if false;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn()
+          && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participantIds;
+        allow write: if false;
+      }
+    }
   }
 }

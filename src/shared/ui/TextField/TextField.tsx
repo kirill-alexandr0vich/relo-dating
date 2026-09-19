@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 
 interface TextFieldProps extends TextInputProps {
-  label: string;
+  label?: string;
   error?: string;
 }
 
@@ -20,7 +20,7 @@ export function TextField({
 }: TextFieldProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      {label && <Text style={styles.label}>{label}</Text>}
       <TextInput
         style={[styles.input, Boolean(error) && styles.inputError, style]}
         placeholderTextColor="#9A9A9A"

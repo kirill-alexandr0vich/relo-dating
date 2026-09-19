@@ -2,6 +2,15 @@ import firestore from '@react-native-firebase/firestore';
 
 export type ClaimUsernameResult = 'ok' | 'taken';
 
+/** 5.2 — resolves an `@username` to a uid via the same reservation collection. */
+export async function lookupUsername(username: string): Promise<string | null> {
+  const snapshot = await firestore()
+    .collection('usernames')
+    .doc(username.toLowerCase())
+    .get();
+  return snapshot.exists ? (snapshot.data() as { uid: string }).uid : null;
+}
+
 /**
  * 3.2/5.2 — `/usernames/{lowercased}` is a uniqueness reservation
  * collection; its doc id IS the lowercased username, matching

@@ -80,3 +80,11 @@ export async function saveOptionalProfileFields(
 ): Promise<void> {
   await userDoc(uid).set(fields, { merge: true });
 }
+
+/** 5 — "Разрешить сообщения от друзей без мэтча" toggle. */
+export async function updateAllowFriendMessagesWithoutMatch(
+  uid: string,
+  allow: boolean,
+): Promise<void> {
+  await userDoc(uid).update({ allowFriendMessagesWithoutMatch: allow });
+}

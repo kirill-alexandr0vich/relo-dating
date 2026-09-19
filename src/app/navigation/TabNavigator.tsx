@@ -5,13 +5,7 @@ import { ProfileScreen } from 'pages/profile';
 import { SwipesScreen } from 'pages/swipes';
 import { FriendsScreen } from 'pages/friends';
 import { MessagesScreen } from 'pages/messages';
-
-export type TabParamList = {
-  Profile: undefined;
-  Swipes: undefined;
-  Friends: undefined;
-  Messages: undefined;
-};
+import type { TabParamList } from 'shared/lib/navigation/types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 

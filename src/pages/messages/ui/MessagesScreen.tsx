@@ -1,24 +1,121 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import FastImage from 'react-native-fast-image';
+import {
+  subscribeToChats,
+  getOtherParticipant,
+  type Chat,
+} from 'entities/chat';
+import { useUserStore, useUserRecords } from 'entities/user';
+import type { MainStackParamList } from 'shared/lib/navigation/types';
+
+type Navigation = NativeStackNavigationProp<MainStackParamList>;
 
 export function MessagesScreen() {
   const { t } = useTranslation();
+  const navigation = useNavigation<Navigation>();
+  const uid = useUserStore(state => state.record?.uid) as string;
+  const [chats, setChats] = useState<Chat[]>([]);
+
+  useEffect(() => {
+    return subscribeToChats(uid, setChats, error => {
+      console.error('Failed to subscribe to chats', error);
+    });
+  }, [uid]);
+
+  const otherUids = useMemo(
+    () => chats.map(chat => getOtherParticipant(chat, uid)),
+    [chats, uid],
+  );
+  const profiles = useUserRecords(otherUids);
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.title}>{t('tabs.messages')}</Text>
-    </View>
+      <FlatList
+        data={chats}
+        keyExtractor={chat => chat.id}
+        contentContainerStyle={styles.list}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>{t('messages.empty')}</Text>
+        }
+        renderItem={({ item }) => {
+          const otherUid = getOtherParticipant(item, uid);
+          const profile = profiles[otherUid];
+          return (
+            <Pressable
+              style={styles.row}
+              onPress={() =>
+                navigation.navigate('ChatConversation', {
+                  chatId: item.id,
+                  otherUid,
+                })
+              }
+            >
+              {profile?.avatarUrls[0] && (
+                <FastImage
+                  source={{ uri: profile.avatarUrls[0] }}
+                  style={styles.avatar}
+                />
+              )}
+              <View style={styles.rowText}>
+                <Text style={styles.rowName}>{profile?.name ?? '…'}</Text>
+                {item.lastMessage && (
+                  <Text style={styles.lastMessage} numberOfLines={1}>
+                    {item.lastMessage}
+                  </Text>
+                )}
+              </View>
+            </Pressable>
+          );
+        }}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  avatar: {
+    borderRadius: 24,
+    height: 48,
+    marginRight: 12,
+    width: 48,
+  },
   container: {
-    alignItems: 'center',
     flex: 1,
-    justifyContent: 'center',
+  },
+  emptyText: {
+    color: '#9A9A9A',
+    paddingHorizontal: 20,
+  },
+  lastMessage: {
+    color: '#9A9A9A',
+    fontSize: 13,
+  },
+  list: {
+    paddingBottom: 20,
+  },
+  row: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  rowName: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  rowText: {
+    flex: 1,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '700',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
 });

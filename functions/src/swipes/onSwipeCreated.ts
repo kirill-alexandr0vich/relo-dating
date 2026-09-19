@@ -1,16 +1,12 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { db } from '../firebaseAdmin';
+import { buildPairId } from '../shared/pairId';
 
 interface SwipeDoc {
   swiperId: string;
   targetId: string;
   action: 'like' | 'dislike';
-}
-
-/** Deterministic id so a re-delivered trigger event can't create a duplicate match (14.2 — triggers aren't idempotent by default). */
-export function buildMatchId(uidA: string, uidB: string): string {
-  return [uidA, uidB].sort().join('_');
 }
 
 export const onSwipeCreated = onDocumentCreated(
@@ -38,9 +34,11 @@ export const onSwipeCreated = onDocumentCreated(
       return;
     }
 
+    // Deterministic id so a re-delivered trigger event can't create a
+    // duplicate match (14.2 — triggers aren't idempotent by default).
     const matchRef = db
       .collection('matches')
-      .doc(buildMatchId(swipe.swiperId, swipe.targetId));
+      .doc(buildPairId(swipe.swiperId, swipe.targetId));
 
     await db.runTransaction(async (transaction: Transaction) => {
       const existingMatch = await transaction.get(matchRef);

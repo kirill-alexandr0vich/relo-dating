@@ -50,6 +50,12 @@ jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(() => Promise.resolve({ didCancel: true })),
 }));
 
+jest.mock('react-native-qrcode-svg', () => 'QRCode');
+
+jest.mock('react-native-camera-kit', () => ({
+  Camera: 'Camera',
+}));
+
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: {
     configure: jest.fn(),

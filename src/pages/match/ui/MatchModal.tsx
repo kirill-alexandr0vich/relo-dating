@@ -1,10 +1,16 @@
 import React from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import FastImage from 'react-native-fast-image';
 import type { MatchNotification } from 'entities/match';
+import { buildChatId } from 'entities/chat';
+import type { MainStackParamList } from 'shared/lib/navigation/types';
+import { useUserStore } from 'entities/user';
 import { Button } from 'shared/ui/Button';
+
+type Navigation = NativeStackNavigationProp<MainStackParamList>;
 
 interface MatchModalProps {
   notification: MatchNotification | null;
@@ -13,9 +19,10 @@ interface MatchModalProps {
 
 export function MatchModal({ notification, onClose }: MatchModalProps) {
   const { t } = useTranslation();
-  const navigation = useNavigation();
+  const navigation = useNavigation<Navigation>();
+  const uid = useUserStore(state => state.record?.uid);
 
-  if (!notification) {
+  if (!notification || !uid) {
     return null;
   }
 
@@ -35,11 +42,10 @@ export function MatchModal({ notification, onClose }: MatchModalProps) {
             label={t('swipes.sendMessage')}
             onPress={() => {
               onClose();
-              // Cross-tab navigation from outside the tab navigator's own
-              // layer (its TabParamList type lives in app/, which pages
-              // must not import from) — the Messages tab doesn't exist
-              // as a chat screen yet either (section 6, not built).
-              navigation.navigate('Messages' as never);
+              navigation.navigate('ChatConversation', {
+                chatId: buildChatId(uid, notification.otherUser.uid),
+                otherUid: notification.otherUser.uid,
+              });
             }}
           />
           <Text style={styles.dismissLink} onPress={onClose}>

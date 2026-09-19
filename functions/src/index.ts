@@ -5,3 +5,4 @@ export {
   removeProfilePhoto,
   reorderProfilePhotos,
 } from './moderation';
+export { sendMessage, blockUser } from './chat';

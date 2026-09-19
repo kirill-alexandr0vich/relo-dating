@@ -2,7 +2,7 @@ import React from 'react';
 import { useUserStore } from 'entities/user';
 import { SplashScreen } from 'pages/splash';
 import { AuthFlowNavigator } from './AuthFlowNavigator';
-import { TabNavigator } from './TabNavigator';
+import { MainNavigator } from './MainNavigator';
 
 export function RootNavigator() {
   const status = useUserStore(state => state.status);
@@ -19,5 +19,5 @@ export function RootNavigator() {
     return <AuthFlowNavigator initialRouteName="OnboardingName" />;
   }
 
-  return <TabNavigator />;
+  return <MainNavigator />;
 }

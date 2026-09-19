@@ -61,7 +61,8 @@
     "unknown_error": "Something went wrong. Please try again.",
     "moderation_rejected_name": "This name isn't allowed. Please choose another one.",
     "moderation_rejected_bio": "This bio isn't allowed. Please edit it and try again.",
-    "moderation_rejected_photo": "This photo isn't allowed. Please choose another one."
+    "moderation_rejected_photo": "This photo isn't allowed. Please choose another one.",
+    "moderation_rejected_message": "This message isn't allowed. Please edit it and try again."
   },
   "profile": {
     "title": "Profile",
@@ -167,5 +168,41 @@
     "cars": "Cars",
     "motorcycles": "Motorcycles",
     "diy": "DIY / crafts"
+  },
+  "friends": {
+    "title": "Friends",
+    "addFriend": "Add friend",
+    "privacy": "Privacy",
+    "requestsTitle": "Friend requests",
+    "listTitle": "Friends",
+    "empty": "No friends yet",
+    "accept": "Accept",
+    "decline": "Decline",
+    "message": "Message",
+    "searchTab": "Search",
+    "myQrTab": "My QR",
+    "scanTab": "Scan QR",
+    "usernameLabel": "Username",
+    "usernamePlaceholderSearch": "@username",
+    "sendRequest": "Send request",
+    "usernameNotFound": "No one found with that username.",
+    "cannotAddSelf": "You can't add yourself.",
+    "requestSent": "Friend request sent",
+    "requestAlreadyExists": "You're already connected with this person",
+    "allowFriendMessages": "Allow messages from friends without a match",
+    "allowFriendMessagesHint": "Turning this off makes existing chats with friends-without-a-match read-only — the history stays, but new messages can't be sent."
+  },
+  "messages": {
+    "title": "Messages",
+    "empty": "No conversations yet",
+    "placeholder": "Message",
+    "send": "Send",
+    "block": "Block",
+    "addFriend": "Add to friends",
+    "connectionError": {
+      "blocked": "You can't message this person.",
+      "friend_messages_disabled": "This chat is read-only right now — one of you turned off friend messages without a match.",
+      "not_connected": "You need to match or become friends before messaging."
+    }
   }
 }

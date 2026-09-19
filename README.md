@@ -72,6 +72,18 @@ npm test            # jest
 - Задеплоить функции и правила: `firebase deploy --only functions,firestore:rules,firestore:indexes,storage:rules` (из корня репозитория; `functions/` — отдельный npm-пакет, `cd functions && npm install` перед первым деплоем).
 - `react-native-image-picker` — новая нативная зависимость, после установки выполнить `cd ios && bundle exec pod install`.
 
+### Друзья и сообщения (разделы 5, 6 ТЗ)
+
+Мэтч и дружба — раздельные сущности, обе дают доступ к чату. `/friends`, `/chats` и `/chats/{id}/messages` используют тот же детерминированный id пары (`sorted(uidA, uidB).join('_')`), что и `/matches`, — вынесено в `functions/src/shared/pairId.ts`.
+
+- Заявки в друзья (по `@username` через `/usernames/{lowercase}` или по QR-диплинку `relocantapp://addfriend/{uid}`) и их принятие/отклонение — прямые клиентские записи в `/friends`, разрешённые правилами Firestore (`get()`/`exists()` проверяют, что мэтч действительно есть для `addedVia:'match'`, и что документ ещё не существует). Отдельный Cloud Function не нужен — модерация на дружбу не распространяется (её нет в списке полей 7.2).
+- **Сообщения** — только через Cloud Function `sendMessage`: проверяет профанити (тот же `obscenity`, что и в профиле) и разрешён ли контакт (мэтч — всегда; принятая дружба — только если у обеих сторон включено "Разрешить сообщения от друзей без мэтча"; блокировка — никогда). Прямая запись клиента в `/chats/*/messages` запрещена правилами.
+- **Блокировка** — Cloud Function `blockUser`: удаляет общие `/matches` и `/friends` (они Cloud-Function-only) и добавляет в `blockedUserIds`. Разблокировка — обычная запись клиента (`arrayRemove`), других побочных эффектов нет.
+- QR: генерация — `react-native-qrcode-svg`, сканирование — `react-native-camera-kit`. Диплинк-приём сделан вручную через `Linking.addEventListener('url', ...)`, а не через `linking`-конфиг React Navigation — из-за условного корневого навигатора (Splash/Auth/Main) полноценная интеграция линкинга непропорционально сложнее для той же цели.
+- Схема `relocantapp://` зарегистрирована в `Info.plist` (`CFBundleURLTypes`) и `AndroidManifest.xml` (intent-filter на `MainActivity`); добавлены `NSCameraUsageDescription`/`NSPhotoLibraryUsageDescription` (iOS) и `CAMERA` permission (Android) для QR-сканера и пикера фото.
+
+**Сознательно не сделано в этом проходе** (см. коммиты): фото/голосовые сообщения в чате, видеозвонки (Agora — отдельная крупная интеграция), пуши на новое сообщение/заявку в друзья (раздел 10 ещё не реализован), свайп-жест «удалить/заблокировать» в списке чатов (кнопки вместо жеста).
+
 ---
 
 Проект создан на базе [`@react-native-community/cli`](https://github.com/react-native-community/cli). Инструкции по установке окружения — в [официальном гайде React Native](https://reactnative.dev/docs/set-up-your-environment).
