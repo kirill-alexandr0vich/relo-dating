@@ -10,5 +10,6 @@ export {
   markChatRead,
   blockUser,
   unblockUser,
+  MEDIA_LIMIT_REACHED_CODE,
 } from './api/chatApi';
 export { uploadToPendingChatStorage } from './api/chatMediaStorageApi';

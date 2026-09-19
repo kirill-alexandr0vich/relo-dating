@@ -1,9 +1,9 @@
 /**
- * Anti-abuse day boundary for the free swipe limit (12): never trust the
- * device clock, only the server's own notion of "now" and the
- * `swipesResetAt` this module last wrote.
+ * Anti-abuse day boundary (12): never trust the device clock, only the
+ * server's own notion of "now" and the `resetAt` this module last wrote.
+ * Shared by every per-day counter (swipe limit, chat-media rate limit, ...).
  */
-export function hasSwipeCounterExpired(
+export function hasCounterExpired(
   resetAt: Date | undefined,
   now: Date,
 ): boolean {

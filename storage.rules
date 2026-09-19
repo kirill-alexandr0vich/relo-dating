@@ -8,9 +8,13 @@ service firebase.storage {
 
     // Staging area for a photo awaiting moderation (7.2) — only its
     // owner can read/write it, and only the submitProfilePhoto Cloud
-    // Function moves it out from here.
+    // Function moves it out from here. `request.resource` is only
+    // defined for writes, so the size check must live on `write` alone —
+    // combining it into a single `read, write` condition would make
+    // reads evaluate against an undefined field.
     match /users/{uid}/pending/{fileName} {
-      allow read, write: if isOwner(uid) && request.resource.size < 10 * 1024 * 1024;
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid) && request.resource.size < 10 * 1024 * 1024;
     }
 
     // Published, already-moderated profile photos (3.2) — public read so
@@ -25,9 +29,11 @@ service firebase.storage {
     // 6.1/6.3 — staging area for a chat photo/voice message awaiting
     // sendChatMedia (moderation for photos, connection check for both).
     // 15MB covers a several-minute voice clip; photos are already
-    // compressed client-side (12) well under this.
+    // compressed client-side (12) well under this. Same read/write split
+    // as users/{uid}/pending above, for the same reason.
     match /chats/{chatId}/pending/{uid}/{fileName} {
-      allow read, write: if isOwner(uid) && request.resource.size < 15 * 1024 * 1024;
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid) && request.resource.size < 15 * 1024 * 1024;
     }
 
     // Published chat media — see sendChatMedia.ts's doc comment for why

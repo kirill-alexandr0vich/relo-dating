@@ -1,24 +1,22 @@
-import { getNextUtcMidnight, hasSwipeCounterExpired } from './dateUtils';
+import { getNextUtcMidnight, hasCounterExpired } from './dateUtils';
 
-describe('hasSwipeCounterExpired', () => {
+describe('hasCounterExpired', () => {
   const now = new Date('2026-01-15T12:00:00Z');
 
-  it('is expired when there is no reset time yet (brand-new user)', () => {
-    expect(hasSwipeCounterExpired(undefined, now)).toBe(true);
+  it('is expired when there is no reset time yet (brand-new counter)', () => {
+    expect(hasCounterExpired(undefined, now)).toBe(true);
   });
 
   it('is expired once the reset time has passed', () => {
-    expect(hasSwipeCounterExpired(new Date('2026-01-15T00:00:00Z'), now)).toBe(
-      true,
-    );
+    expect(hasCounterExpired(new Date('2026-01-15T00:00:00Z'), now)).toBe(true);
   });
 
   it('is expired exactly at the reset time (boundary is inclusive)', () => {
-    expect(hasSwipeCounterExpired(now, now)).toBe(true);
+    expect(hasCounterExpired(now, now)).toBe(true);
   });
 
   it('is not expired while the reset time is still in the future', () => {
-    expect(hasSwipeCounterExpired(new Date('2026-01-16T00:00:00Z'), now)).toBe(
+    expect(hasCounterExpired(new Date('2026-01-16T00:00:00Z'), now)).toBe(
       false,
     );
   });

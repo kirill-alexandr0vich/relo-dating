@@ -5,7 +5,7 @@ import {
   type Transaction,
 } from 'firebase-admin/firestore';
 import { db } from '../firebaseAdmin';
-import { getNextUtcMidnight, hasSwipeCounterExpired } from './dateUtils';
+import { getNextUtcMidnight, hasCounterExpired } from '../shared/dateUtils';
 import { recordSwipeInputSchema } from './schema';
 
 const FREE_DAILY_SWIPE_LIMIT = 20;
@@ -52,7 +52,7 @@ export const recordSwipe = onCall(async request => {
 
     if (swiper.premium !== true) {
       const now = Timestamp.now();
-      const expired = hasSwipeCounterExpired(
+      const expired = hasCounterExpired(
         swiper.swipesResetAt?.toDate(),
         now.toDate(),
       );

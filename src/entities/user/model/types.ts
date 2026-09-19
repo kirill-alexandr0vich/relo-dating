@@ -30,6 +30,9 @@ export interface UserRecord {
   swipesResetAt?: FirebaseFirestoreTypes.Timestamp;
   callMinutesUsedToday?: number;
   callMinutesResetAt?: number;
+  /** 12 — anti-abuse cap on chat photo/voice messages; see functions/src/chat/sendChatMedia. */
+  mediaMessagesUsedToday?: number;
+  mediaMessagesResetAt?: FirebaseFirestoreTypes.Timestamp;
   allowFriendMessagesWithoutMatch: boolean;
   autoHidden?: boolean;
   autoHiddenAt?: number;

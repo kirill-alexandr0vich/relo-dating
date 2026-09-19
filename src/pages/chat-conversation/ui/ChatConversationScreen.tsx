@@ -19,6 +19,7 @@ import {
   markChatRead,
   blockUser,
   formatDuration,
+  MEDIA_LIMIT_REACHED_CODE,
   type Message,
 } from 'entities/chat';
 import { addFriendFromMatch } from 'entities/friend';
@@ -77,12 +78,18 @@ export function ChatConversationScreen() {
 
   useEffect(() => {
     // 6.2 — mark read on opening the chat, and again whenever a new
-    // message arrives while it's still open (no separate "seen" event
-    // needed for the sender's own messages — they're stamped on send).
+    // *incoming* message arrives while it's still open. Skipped when the
+    // newest message is my own — sendMessage/sendChatMedia already stamp
+    // my readBy in the same transaction, so this would just be a
+    // redundant Cloud Function call on every message I send.
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage && lastMessage.senderId === uid) {
+      return;
+    }
     markChatRead(chatId).catch(error => {
       console.error('Failed to mark chat read', error);
     });
-  }, [chatId, messages.length]);
+  }, [chatId, messages, uid]);
 
   useEffect(() => {
     // 5 — "Добавить в друзья" from a match's chat is only offered when
@@ -108,7 +115,7 @@ export function ChatConversationScreen() {
   }
 
   function showSendError(error: unknown) {
-    const message = (error as { message?: string }).message;
+    const { code, message } = error as { code?: string; message?: string };
     if (message === 'moderation_rejected') {
       Alert.alert(t('messages.title'), t('errors.moderation_rejected_message'));
     } else if (message && CONNECTION_ERROR_REASONS.includes(message)) {
@@ -118,6 +125,8 @@ export function ChatConversationScreen() {
       );
     } else if (message === 'mic_permission_denied') {
       Alert.alert(t('messages.title'), t('errors.mic_permission_denied'));
+    } else if (code === MEDIA_LIMIT_REACHED_CODE) {
+      Alert.alert(t('messages.title'), t('errors.media_limit_reached'));
     } else {
       const handled = handleFirebaseError(error);
       Alert.alert(t('messages.title'), t(`errors.${handled.translationKey}`));
@@ -183,7 +192,13 @@ export function ChatConversationScreen() {
     if (item.type === 'voice') {
       const isPlaying = voicePlayback.playingUrl === item.content;
       return (
-        <Pressable onPress={() => voicePlayback.toggle(item.content)}>
+        <Pressable
+          onPress={() =>
+            voicePlayback.toggle(item.content).catch(error => {
+              console.error('Failed to play voice message', error);
+            })
+          }
+        >
           <Text
             style={isMine ? styles.bubbleTextMine : styles.bubbleTextTheirs}
           >

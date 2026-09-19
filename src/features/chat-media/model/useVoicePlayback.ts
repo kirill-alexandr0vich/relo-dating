@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 
 interface UseVoicePlaybackResult {
@@ -44,6 +44,17 @@ export function useVoicePlayback(): UseVoicePlaybackResult {
     },
     [playingUrl],
   );
+
+  useEffect(() => {
+    // Leaving the chat mid-playback must not leave audio running with no
+    // UI left to stop it.
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.stopPlayer().catch(() => {});
+        playerRef.current.removePlayBackListener();
+      }
+    };
+  }, []);
 
   return { playingUrl, toggle };
 }

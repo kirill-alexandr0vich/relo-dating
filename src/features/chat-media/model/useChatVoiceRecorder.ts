@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { PermissionsAndroid, Platform } from 'react-native';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
 import { sendChatVoice, uploadToPendingChatStorage } from 'entities/chat';
@@ -40,6 +40,12 @@ export function useChatVoiceRecorder(
   const [isSending, setIsSending] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const recorderRef = useRef<AudioRecorderPlayer | null>(null);
+  // Guards cancelRecording/stopAndSendRecording against both firing on a
+  // near-simultaneous double-tap of two different buttons — both would
+  // otherwise read the same stale `isRecording` closure and both try to
+  // stop an already-stopping recorder.
+  const isStoppingRef = useRef(false);
+  const stopAndSendRecordingRef = useRef<() => Promise<void>>(async () => {});
 
   function getRecorder(): AudioRecorderPlayer {
     if (!recorderRef.current) {
@@ -59,51 +65,84 @@ export function useChatVoiceRecorder(
       const seconds = Math.floor(meta.currentPosition / 1000);
       setElapsedSeconds(seconds);
       if (seconds >= MAX_DURATION_SECONDS) {
-        recorder.stopRecorder();
+        // Route the auto-stop through the same stop+send path a manual
+        // tap would use, rather than calling recorder.stopRecorder()
+        // directly here — that would desync isRecording from the
+        // native recorder's actual state and leave the UI stuck.
+        stopAndSendRecordingRef.current();
       }
     });
     setIsRecording(true);
   }, []);
 
   const cancelRecording = useCallback(async () => {
-    if (!isRecording) {
+    if (!isRecording || isStoppingRef.current) {
       return;
     }
-    const recorder = getRecorder();
-    await recorder.stopRecorder();
-    recorder.removeRecordBackListener();
-    setIsRecording(false);
-    setElapsedSeconds(0);
+    isStoppingRef.current = true;
+    try {
+      const recorder = getRecorder();
+      await recorder.stopRecorder();
+      recorder.removeRecordBackListener();
+      setIsRecording(false);
+      setElapsedSeconds(0);
+    } finally {
+      isStoppingRef.current = false;
+    }
   }, [isRecording]);
 
   const stopAndSendRecording = useCallback(async () => {
-    if (!isRecording) {
+    if (!isRecording || isStoppingRef.current) {
       return;
     }
-    const recorder = getRecorder();
-    const uri = await recorder.stopRecorder();
-    recorder.removeRecordBackListener();
-    setIsRecording(false);
-    const durationSeconds = elapsedSeconds;
-    setElapsedSeconds(0);
-
-    if (durationSeconds < MIN_DURATION_SECONDS) {
-      return;
-    }
-
-    setIsSending(true);
+    isStoppingRef.current = true;
     try {
-      const pendingPath = await uploadToPendingChatStorage(
-        chatId,
-        uid,
-        uri,
-        'm4a',
-      );
-      await sendChatVoice(chatId, pendingPath, durationSeconds);
+      const recorder = getRecorder();
+      const uri = await recorder.stopRecorder();
+      recorder.removeRecordBackListener();
+      setIsRecording(false);
+      const durationSeconds = elapsedSeconds;
+      setElapsedSeconds(0);
+
+      if (durationSeconds < MIN_DURATION_SECONDS) {
+        // The recording is discarded; its temp file lives in the OS
+        // cache/temp directory (default when no explicit uri is passed
+        // to startRecorder), which the OS reclaims on its own — not
+        // worth a new filesystem dependency just to unlink it eagerly.
+        return;
+      }
+
+      setIsSending(true);
+      try {
+        const pendingPath = await uploadToPendingChatStorage(
+          chatId,
+          uid,
+          uri,
+          'm4a',
+        );
+        await sendChatVoice(chatId, pendingPath, durationSeconds);
+      } finally {
+        setIsSending(false);
+      }
     } finally {
-      setIsSending(false);
+      isStoppingRef.current = false;
     }
   }, [chatId, uid, isRecording, elapsedSeconds]);
+
+  useEffect(() => {
+    stopAndSendRecordingRef.current = stopAndSendRecording;
+  }, [stopAndSendRecording]);
+
+  useEffect(() => {
+    // Leaving the chat mid-recording must not leave the microphone
+    // running with no UI left to stop it.
+    return () => {
+      if (recorderRef.current) {
+        recorderRef.current.stopRecorder().catch(() => {});
+        recorderRef.current.removeRecordBackListener();
+      }
+    };
+  }, []);
 
   return {
     isRecording,

@@ -54,6 +54,9 @@ export async function sendChatMessage(
   return response.data.messageId;
 }
 
+/** A `resource-exhausted` error from sendChatMedia means the daily media-message cap was hit, not a network failure. */
+export const MEDIA_LIMIT_REACHED_CODE = 'resource-exhausted';
+
 /** 6.1/6.3 — moderated + connection-checked server-side; see functions/src/chat/sendChatMedia. */
 export async function sendChatPhoto(
   chatId: string,
