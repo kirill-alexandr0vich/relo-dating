@@ -1,7 +1,8 @@
 buildscript {
     ext {
         buildToolsVersion = "37.0.0"
-        minSdkVersion = 24
+        // 12 — TOR requires Android 8.0 / API 26+ as the minimum supported OS.
+        minSdkVersion = 26
         compileSdkVersion = 37
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"

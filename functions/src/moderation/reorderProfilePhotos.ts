@@ -1,8 +1,6 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
-import { z } from 'zod';
 import { db } from '../firebaseAdmin';
-
-const inputSchema = z.object({ urls: z.array(z.string().min(1)) });
+import { reorderProfilePhotosInputSchema } from './schema';
 
 /** 3.2 — "первое фото — главное": lets the client reorder without granting general write access to `avatarUrls`. */
 export const reorderProfilePhotos = onCall(async request => {
@@ -11,7 +9,7 @@ export const reorderProfilePhotos = onCall(async request => {
     throw new HttpsError('unauthenticated', 'Sign in required.');
   }
 
-  const parsed = inputSchema.safeParse(request.data);
+  const parsed = reorderProfilePhotosInputSchema.safeParse(request.data);
   if (!parsed.success) {
     throw new HttpsError('invalid-argument', 'Invalid payload.');
   }

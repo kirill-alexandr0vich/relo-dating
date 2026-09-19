@@ -191,7 +191,10 @@
     "requestSent": "Friend request sent",
     "requestAlreadyExists": "You're already connected with this person",
     "allowFriendMessages": "Allow messages from friends without a match",
-    "allowFriendMessagesHint": "Turning this off makes existing chats with friends-without-a-match read-only — the history stays, but new messages can't be sent."
+    "allowFriendMessagesHint": "Turning this off makes existing chats with friends-without-a-match read-only — the history stays, but new messages can't be sent.",
+    "blockedUsersTitle": "Blocked users",
+    "blockedUsersEmpty": "No blocked users",
+    "unblock": "Unblock"
   },
   "messages": {
     "title": "Messages",

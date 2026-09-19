@@ -1,9 +1,6 @@
 import firestore from '@react-native-firebase/firestore';
+import { buildPairId } from 'shared/lib/pairId';
 import type { AddedVia, Friendship } from '../model/types';
-
-function buildPairId(uidA: string, uidB: string): string {
-  return [uidA, uidB].sort().join('_');
-}
 
 export type SendFriendRequestResult = 'sent' | 'already_exists';
 

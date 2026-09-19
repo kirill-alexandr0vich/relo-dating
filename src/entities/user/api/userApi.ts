@@ -24,8 +24,14 @@ export function subscribeToUserRecord(
  * Creates the initial `/users/{uid}` document right after a brand-new
  * sign-in. Only ever writes fields the client is allowed to own (see 12,
  * Firestore Security Rules) — verified/premium/swipesUsedToday/autoHidden
- * are left untouched here and are initialized server-side by a Cloud
- * Function auth trigger.
+ * are deliberately left out of this write. There is no auth trigger that
+ * back-fills them: they simply don't exist on the doc until whichever
+ * Cloud Function first has a reason to set one (recordSwipe for
+ * swipesUsedToday, onReportWritten for autoHidden, and eventually the
+ * not-yet-built verification/RevenueCat webhooks for the rest). Every
+ * reader already treats them as optional (`UserRecord`'s `?` fields,
+ * `?? false` / `?? 0` at call sites), so an absent field behaves the
+ * same as an explicit default.
  */
 export async function ensureUserRecordExists(
   uid: string,

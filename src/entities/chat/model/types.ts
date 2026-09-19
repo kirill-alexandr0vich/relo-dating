@@ -1,3 +1,5 @@
+import { buildPairId } from 'shared/lib/pairId';
+
 export type MessageType = 'text' | 'image' | 'voice' | 'call_log';
 
 export interface Chat {
@@ -18,7 +20,7 @@ export interface Message {
 
 /** Deterministic — matches the id scheme functions/src/shared/pairId.ts uses for matches/friends/chats. */
 export function buildChatId(uidA: string, uidB: string): string {
-  return [uidA, uidB].sort().join('_');
+  return buildPairId(uidA, uidB);
 }
 
 export function getOtherParticipant(

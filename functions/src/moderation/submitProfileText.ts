@@ -1,4 +1,5 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import * as logger from 'firebase-functions/logger';
 import { db } from '../firebaseAdmin';
 import { containsProfanity } from './textModeration';
 import { submitProfileTextInputSchema } from './schema';
@@ -34,6 +35,10 @@ export const submitProfileText = onCall(async request => {
   }
 
   if (containsProfanity(value)) {
+    logger.warn('submitProfileText: rejected by profanity filter', {
+      uid,
+      field,
+    });
     throw new HttpsError('failed-precondition', 'moderation_rejected');
   }
 

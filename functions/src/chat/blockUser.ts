@@ -1,5 +1,6 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { FieldValue } from 'firebase-admin/firestore';
+import * as logger from 'firebase-functions/logger';
 import { db } from '../firebaseAdmin';
 import { buildPairId } from '../shared/pairId';
 import { blockUserInputSchema } from './schema';
@@ -40,5 +41,6 @@ export const blockUser = onCall(async request => {
   batch.delete(db.collection('friends').doc(pairId));
   await batch.commit();
 
+  logger.info('blockUser: user blocked', { uid, targetUid });
   return { blocked: true };
 });

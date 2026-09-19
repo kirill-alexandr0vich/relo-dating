@@ -1,5 +1,6 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
+import * as logger from 'firebase-functions/logger';
 import { db } from '../firebaseAdmin';
 import { buildPairId } from '../shared/pairId';
 
@@ -40,6 +41,7 @@ export const onSwipeCreated = onDocumentCreated(
       .collection('matches')
       .doc(buildPairId(swipe.swiperId, swipe.targetId));
 
+    let created = false;
     await db.runTransaction(async (transaction: Transaction) => {
       const existingMatch = await transaction.get(matchRef);
       if (existingMatch.exists) {
@@ -51,7 +53,14 @@ export const onSwipeCreated = onDocumentCreated(
         createdAt: now,
         lastMessageAt: now,
       });
+      created = true;
     });
+
+    if (created) {
+      logger.info('onSwipeCreated: match created', {
+        matchId: matchRef.id,
+      });
+    }
 
     // TODO(TZ section 10 — push notifications): send FCM push to both users
     // once device token registration exists.

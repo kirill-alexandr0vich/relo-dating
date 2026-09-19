@@ -1,5 +1,6 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
+import * as logger from 'firebase-functions/logger';
 import { db } from '../firebaseAdmin';
 import { shouldAutoHide, type ReportReason } from './autoHideThresholds';
 
@@ -47,5 +48,13 @@ export const onReportWritten = onDocumentWritten(
         { autoHidden: true, autoHiddenAt: FieldValue.serverTimestamp() },
         { merge: true },
       );
+
+    // Worth surfacing in logs even though it's not an error path: this is
+    // the one moderation event with no admin panel to observe it from yet.
+    logger.warn('onReportWritten: user auto-hidden', {
+      targetId: report.targetId,
+      reason: report.reason,
+      uniqueReporterCount: matchingReports.size,
+    });
   },
 );

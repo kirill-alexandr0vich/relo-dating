@@ -1,5 +1,6 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
+import * as logger from 'firebase-functions/logger';
 import { db } from '../firebaseAdmin';
 import { buildPairId } from '../shared/pairId';
 import { containsProfanity } from '../moderation/textModeration';
@@ -72,6 +73,10 @@ export const sendMessage = onCall(async request => {
   }
 
   if (containsProfanity(text)) {
+    logger.warn('sendMessage: rejected by profanity filter', {
+      uid,
+      chatId,
+    });
     throw new HttpsError('failed-precondition', 'moderation_rejected');
   }
 
