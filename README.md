@@ -173,7 +173,8 @@ FCM уже был в стеке, но нигде не инициализиров
 
 ### Что нужно сделать руками (вне кода)
 
-Код этих шагов не заменяет — это настройка консолей и Xcode:
+Пошаговая инструкция — в [`docs/SETUP.md`](docs/SETUP.md): аккаунты, где что
+скопировать и куда вставить. Кратко:
 
 1. **Firebase config-файлы**: положить `android/app/google-services.json` и `ios/ReloDating/GoogleService-Info.plist` из своего Firebase-проекта. Без них приложение не стартует.
 2. **Push на iOS**: загрузить APNs-ключ в Firebase Console (Cloud Messaging) и включить capability «Push Notifications» в Xcode для таргета. На Android ничего не требуется — разрешение уже в манифесте.
