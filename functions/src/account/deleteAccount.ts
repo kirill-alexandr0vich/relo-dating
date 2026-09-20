@@ -89,8 +89,12 @@ export const deleteAccount = onCall(
         deletedParticipantIds: FieldValue.arrayUnion(uid),
       }),
     );
-    writer.delete(db.collection('users').doc(uid));
     await writer.close();
+
+    // recursiveDelete, not a plain delete: the profile has a `private`
+    // subcollection (push tokens, presence — see 10), and deleting a
+    // document leaves its subcollections behind.
+    await db.recursiveDelete(db.collection('users').doc(uid));
 
     const bucket = getStorage().bucket();
     await bucket.deleteFiles({ prefix: `users/${uid}/` });

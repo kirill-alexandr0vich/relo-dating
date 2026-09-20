@@ -5,6 +5,10 @@ import { AddFriendScreen } from 'pages/add-friend';
 import { PrivacySettingsScreen } from 'pages/privacy-settings';
 import { DeleteAccountScreen } from 'pages/delete-account';
 import { useAddFriendDeepLink } from 'features/add-friend';
+import {
+  usePushNavigation,
+  usePushRegistration,
+} from 'features/push-notifications';
 import type { MainStackParamList } from 'shared/lib/navigation/types';
 import { TabNavigator } from './TabNavigator';
 
@@ -18,6 +22,8 @@ const Stack = createNativeStackNavigator<MainStackParamList>();
  */
 export function MainNavigator() {
   useAddFriendDeepLink();
+  usePushRegistration();
+  usePushNavigation();
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>

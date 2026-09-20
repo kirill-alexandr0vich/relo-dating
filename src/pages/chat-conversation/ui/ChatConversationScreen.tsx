@@ -32,6 +32,7 @@ import {
   useChatVoiceRecorder,
   useVoicePlayback,
 } from 'features/chat-media';
+import { useChatPresence } from 'features/push-notifications';
 import { ReportModal } from 'features/report';
 import { handleFirebaseError } from 'shared/api/handleFirebaseError';
 import { Button } from 'shared/ui/Button';
@@ -76,6 +77,8 @@ export function ChatConversationScreen() {
     stopAndSendRecording,
   } = useChatVoiceRecorder(chatId, uid);
   const voicePlayback = useVoicePlayback();
+  // 10 — no push for messages arriving in the chat being read right now.
+  useChatPresence(chatId);
 
   useEffect(() => {
     return subscribeToMessages(chatId, setMessages, error => {

@@ -19,6 +19,12 @@ export {
   saveOptionalProfileFields,
   updateAllowFriendMessagesWithoutMatch,
 } from './api/userApi';
+export {
+  saveDeviceToken,
+  removeDeviceToken,
+  saveInterfaceLanguage,
+  setActiveChatId,
+} from './api/pushSettingsApi';
 export type { OptionalProfileFields } from './api/userApi';
 export { claimUsername, lookupUserByUsername } from './api/usernameApi';
 export type { ClaimUsernameResult } from './api/usernameApi';

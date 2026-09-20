@@ -1,3 +1,5 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
+
 /**
  * Navigation param-list types live here (not next to the navigators in
  * app/navigation/) specifically so pages/features can import them for
@@ -12,7 +14,8 @@ export type TabParamList = {
 };
 
 export type MainStackParamList = {
-  Tabs: undefined;
+  // Typed as nested params so a push tap can open a specific tab (10).
+  Tabs: NavigatorScreenParams<TabParamList> | undefined;
   ChatConversation: { chatId: string; otherUid: string };
   AddFriend: undefined;
   PrivacySettings: undefined;

@@ -80,6 +80,15 @@ service cloud.firestore {
         && validAge();
 
       allow delete: if false;
+
+      // 10 — push state (device tokens, interface language, which chat is
+      // open right now). Kept out of the profile document because that one
+      // is readable by everyone you're connected to, and `activeChatId`
+      // encodes the uid of whoever you're talking to at this moment.
+      // Cloud Functions read it as admin; nobody else ever does.
+      match /private/{document} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     // Username uniqueness reservation (5.2/3.2) — doc id is the

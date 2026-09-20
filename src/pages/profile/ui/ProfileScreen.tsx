@@ -24,6 +24,7 @@ import {
 } from 'entities/user';
 import type { Gender, LookingFor, OptionalProfileFields } from 'entities/user';
 import { usePhotoUpload, getHereSinceOptions } from 'features/edit-profile';
+import { unregisterThisDevice } from 'features/push-notifications';
 import {
   INTEREST_TAGS,
   MAX_INTERESTS_PER_PROFILE,
@@ -125,6 +126,13 @@ export function ProfileScreen() {
     } catch (error) {
       handleFieldError(error, 'photo');
     }
+  }
+
+  async function handleSignOut() {
+    // 10 — drop this device's push token first, or the account keeps
+    // sending notifications to a phone it is no longer signed in on.
+    await unregisterThisDevice(record.uid);
+    await auth().signOut();
   }
 
   async function handleSave() {
@@ -389,7 +397,7 @@ export function ProfileScreen() {
         disabled={isSaving || !name.trim()}
       />
 
-      <Text style={styles.signOutLink} onPress={() => auth().signOut()}>
+      <Text style={styles.signOutLink} onPress={handleSignOut}>
         {t('profile.signOut')}
       </Text>
 

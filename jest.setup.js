@@ -47,6 +47,23 @@ jest.mock('@react-native-firebase/storage', () => {
   return { __esModule: true, default: storage };
 });
 
+jest.mock('@react-native-firebase/messaging', () => {
+  const messaging = jest.fn(() => ({
+    requestPermission: jest.fn(() => Promise.resolve(1)),
+    getToken: jest.fn(() => Promise.resolve('test-token')),
+    onTokenRefresh: jest.fn(() => jest.fn()),
+    onNotificationOpenedApp: jest.fn(() => jest.fn()),
+    getInitialNotification: jest.fn(() => Promise.resolve(null)),
+  }));
+  messaging.AuthorizationStatus = {
+    NOT_DETERMINED: -1,
+    DENIED: 0,
+    AUTHORIZED: 1,
+    PROVISIONAL: 2,
+  };
+  return { __esModule: true, default: messaging };
+});
+
 jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(() => Promise.resolve({ didCancel: true })),
 }));

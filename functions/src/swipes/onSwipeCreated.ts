@@ -61,8 +61,7 @@ export const onSwipeCreated = onDocumentCreated(
         matchId: matchRef.id,
       });
     }
-
-    // TODO(TZ section 10 — push notifications): send FCM push to both users
-    // once device token registration exists.
+    // Both users are told about it by the onMatchCreated trigger (10),
+    // which reacts to the write above — not from here (14.2).
   },
 );
