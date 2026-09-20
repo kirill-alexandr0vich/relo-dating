@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import type { UserRecord } from 'entities/user';
+import type { PublicProfile } from 'entities/user';
 import { useUserStore } from 'entities/user';
 import type { SwipeAction } from 'entities/swipe';
 import { useMatchNotifications } from 'entities/match';
@@ -40,7 +40,7 @@ export function SwipesScreen() {
     swipesResetAtMillis: record.swipesResetAt?.toMillis(),
   });
 
-  async function handleSwipe(candidate: UserRecord, action: SwipeAction) {
+  async function handleSwipe(candidate: PublicProfile, action: SwipeAction) {
     try {
       await swipe(candidate, action);
     } catch (error) {

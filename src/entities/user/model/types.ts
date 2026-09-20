@@ -50,6 +50,31 @@ export interface UserRecord {
   sortKey?: number;
 }
 
+/**
+ * Someone else's profile, as served by the `fetchSwipeCandidates` and
+ * `lookupUserByUsername` Cloud Functions (functions/src/feed). This is
+ * everything the client is given about a user it isn't connected to —
+ * `/users` documents themselves are only readable for your own profile
+ * and for people you already share a match/friendship/chat with (see
+ * firestore.rules), so counters, block lists and moderation flags never
+ * reach another user's device.
+ */
+export interface PublicProfile {
+  uid: string;
+  name: string;
+  avatarUrls: string[];
+  country: string;
+  nativeLanguage: string;
+  age?: number;
+  gender?: Gender;
+  lookingFor?: LookingFor;
+  interests?: string[];
+  bio?: string;
+  username?: string;
+  verified?: boolean;
+  hereSince?: string;
+}
+
 /** A `UserRecord` that has completed the required registration fields (3.2). */
 export interface User extends UserRecord {
   name: string;

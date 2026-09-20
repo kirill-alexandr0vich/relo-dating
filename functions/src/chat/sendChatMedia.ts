@@ -29,18 +29,14 @@ interface SenderDoc {
  * sendMessage; the content is a file the client already uploaded to a
  * private per-chat staging path in Storage rather than inline text.
  *
- * Published media is made public (same mechanism as submitProfilePhoto)
- * rather than gated by a Storage rule scoped to the two participants —
- * a stricter per-participant read rule would need either a cross-service
- * Storage rule reading /chats from Firestore, or short-lived signed URLs
- * issued per request, and neither can be verified end-to-end without a
- * live deploy and a real device, unavailable in this environment. The
- * URL is unguessable (Firestore-generated id as the filename) but not
- * access-controlled beyond that — documented in docs/STATUS.md as a
- * known limitation, not shipped silently. Precisely because it's public,
- * the actual file content-type is always verified below (both for
- * images and voice) — otherwise `type` is just a client-asserted label,
- * and this endpoint would double as a free, unmoderated public file host.
+ * Unlike profile photos (which are public by design — they have to load
+ * in everyone's feed), chat media stays private: the file is never made
+ * public, the message stores its Storage PATH rather than a URL, and
+ * storage.rules only lets the two uids encoded in `chatId` read it. A
+ * participant's client turns that path into a short-lived download URL
+ * itself. The content-type of the file is still verified below for both
+ * images and voice — `type` is a client-asserted label, and a mislabelled
+ * file would otherwise sail past image moderation.
  *
  * Voice has no automated *content* moderation: 7.2 requires moderating
  * all user content, but there is no audio moderation pipeline available
@@ -121,8 +117,6 @@ export const sendChatMedia = onCall(async request => {
     );
   }
   const mediaFile = bucket.file(mediaPath);
-  await mediaFile.makePublic();
-  const url = `https://storage.googleapis.com/${bucket.name}/${mediaPath}`;
 
   const senderRef = db.collection('users').doc(uid);
   const chatRef = db.collection('chats').doc(chatId);
@@ -173,7 +167,9 @@ export const sendChatMedia = onCall(async request => {
       transaction.set(messageRef, {
         senderId: uid,
         type,
-        content: url,
+        // The Storage path, not a URL: only a participant can turn it
+        // into a download URL (see storage.rules).
+        content: mediaPath,
         createdAt: now,
         ...(type === 'voice'
           ? { durationSeconds: parsed.data.durationSeconds }
@@ -182,11 +178,12 @@ export const sendChatMedia = onCall(async request => {
     });
   } catch (error) {
     // Whatever failed (rate limit, transient Firestore error), the file
-    // is already public and moved with nothing pointing at it — clean
-    // it up rather than leaking it (same pattern as submitProfilePhoto).
+    // has already been moved out of staging with nothing pointing at it —
+    // clean it up rather than leaving an orphan (same pattern as
+    // submitProfilePhoto).
     await mediaFile.delete({ ignoreNotFound: true });
     throw error;
   }
 
-  return { messageId: messageRef.id, url };
+  return { messageId: messageRef.id, path: mediaPath };
 });

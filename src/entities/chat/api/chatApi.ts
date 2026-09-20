@@ -57,17 +57,22 @@ export async function sendChatMessage(
 /** A `resource-exhausted` error from sendChatMedia means the daily media-message cap was hit, not a network failure. */
 export const MEDIA_LIMIT_REACHED_CODE = 'resource-exhausted';
 
-/** 6.1/6.3 — moderated + connection-checked server-side; see functions/src/chat/sendChatMedia. */
+/**
+ * 6.1/6.3 — moderated + connection-checked server-side; see
+ * functions/src/chat/sendChatMedia. Returns the Storage path of the
+ * published file (not a URL — chat media is participant-only, see
+ * `resolveChatMediaUrl`).
+ */
 export async function sendChatPhoto(
   chatId: string,
   pendingPath: string,
 ): Promise<string> {
   const callable = functions().httpsCallable<
     { chatId: string; pendingPath: string; type: 'image' },
-    { messageId: string; url: string }
+    { messageId: string; path: string }
   >('sendChatMedia');
   const response = await callable({ chatId, pendingPath, type: 'image' });
-  return response.data.url;
+  return response.data.path;
 }
 
 /** 6.1/6.3 — no automated moderation for voice; see functions/src/chat/sendChatMedia's doc comment. */
@@ -83,7 +88,7 @@ export async function sendChatVoice(
       type: 'voice';
       durationSeconds: number;
     },
-    { messageId: string; url: string }
+    { messageId: string; path: string }
   >('sendChatMedia');
   const response = await callable({
     chatId,
@@ -91,7 +96,7 @@ export async function sendChatVoice(
     type: 'voice',
     durationSeconds,
   });
-  return response.data.url;
+  return response.data.path;
 }
 
 /** 6.2 — stamps my own read position on this chat; see functions/src/chat/markChatRead. */

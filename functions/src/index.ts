@@ -6,4 +6,5 @@ export {
   reorderProfilePhotos,
 } from './moderation';
 export { sendMessage, sendChatMedia, markChatRead, blockUser } from './chat';
+export { fetchSwipeCandidates, lookupUserByUsername } from './feed';
 export { onReportWritten } from './reports';

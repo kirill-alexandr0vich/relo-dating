@@ -1,6 +1,5 @@
 export { useSwipeFeed } from './model/useSwipeFeed';
 export { calculateCompatibilityScore } from './model/calculateCompatibilityScore';
-export { isMutuallyVisible, isEligibleCandidate } from './model/matchingRules';
 export {
   FREE_DAILY_SWIPE_LIMIT,
   getRemainingSwipes,

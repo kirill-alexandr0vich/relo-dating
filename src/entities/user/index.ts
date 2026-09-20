@@ -1,4 +1,10 @@
-export type { User, UserRecord, Gender, LookingFor } from './model/types';
+export type {
+  User,
+  UserRecord,
+  PublicProfile,
+  Gender,
+  LookingFor,
+} from './model/types';
 export { isRegistrationComplete } from './model/types';
 export { getResidencyBadge } from './model/residencyBadge';
 export type { ResidencyBadge } from './model/residencyBadge';
@@ -14,7 +20,7 @@ export {
   updateAllowFriendMessagesWithoutMatch,
 } from './api/userApi';
 export type { OptionalProfileFields } from './api/userApi';
-export { claimUsername, lookupUsername } from './api/usernameApi';
+export { claimUsername, lookupUserByUsername } from './api/usernameApi';
 export type { ClaimUsernameResult } from './api/usernameApi';
 export {
   submitProfileText,

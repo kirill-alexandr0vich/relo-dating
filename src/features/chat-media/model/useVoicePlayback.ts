@@ -1,16 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AudioRecorderPlayer from 'react-native-audio-recorder-player';
+import { resolveChatMediaUrl } from 'entities/chat';
 
 interface UseVoicePlaybackResult {
-  /** The url currently playing, or `null` if nothing is. */
-  playingUrl: string | null;
-  /** Tapping the same url again stops it; tapping a different one switches. */
-  toggle: (url: string) => Promise<void>;
+  /** Storage path of the message currently playing, or `null` if nothing is. */
+  playingPath: string | null;
+  /** Tapping the same message again stops it; tapping a different one switches. */
+  toggle: (path: string) => Promise<void>;
 }
 
-/** 6.1/6.3 — plays one voice message bubble at a time. */
+/**
+ * 6.1/6.3 — plays one voice message bubble at a time. Takes the message's
+ * Storage path, not a URL: chat media is readable only by the two
+ * participants, so the playable URL is fetched per path (and cached by
+ * `resolveChatMediaUrl`).
+ */
 export function useVoicePlayback(): UseVoicePlaybackResult {
-  const [playingUrl, setPlayingUrl] = useState<string | null>(null);
+  const [playingPath, setPlayingPath] = useState<string | null>(null);
   const playerRef = useRef<AudioRecorderPlayer | null>(null);
 
   function getPlayer(): AudioRecorderPlayer {
@@ -21,28 +27,29 @@ export function useVoicePlayback(): UseVoicePlaybackResult {
   }
 
   const toggle = useCallback(
-    async (url: string) => {
+    async (path: string) => {
       const player = getPlayer();
 
-      if (playingUrl) {
+      if (playingPath) {
         await player.stopPlayer();
         player.removePlayBackListener();
-        setPlayingUrl(null);
-        if (playingUrl === url) {
+        setPlayingPath(null);
+        if (playingPath === path) {
           return;
         }
       }
 
+      const url = await resolveChatMediaUrl(path);
       await player.startPlayer(url);
-      setPlayingUrl(url);
+      setPlayingPath(path);
       player.addPlayBackListener(meta => {
         if (meta.isFinished) {
           player.removePlayBackListener();
-          setPlayingUrl(null);
+          setPlayingPath(null);
         }
       });
     },
-    [playingUrl],
+    [playingPath],
   );
 
   useEffect(() => {
@@ -56,5 +63,5 @@ export function useVoicePlayback(): UseVoicePlaybackResult {
     };
   }, []);
 
-  return { playingUrl, toggle };
+  return { playingPath, toggle };
 }

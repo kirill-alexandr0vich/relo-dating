@@ -1,14 +1,25 @@
 import firestore from '@react-native-firebase/firestore';
+import functions from '@react-native-firebase/functions';
+import type { PublicProfile } from '../model/types';
 
 export type ClaimUsernameResult = 'ok' | 'taken';
 
-/** 5.2 — resolves an `@username` to a uid via the same reservation collection. */
-export async function lookupUsername(username: string): Promise<string | null> {
-  const snapshot = await firestore()
-    .collection('usernames')
-    .doc(username.toLowerCase())
-    .get();
-  return snapshot.exists ? (snapshot.data() as { uid: string }).uid : null;
+/**
+ * 5.2 — resolves an `@username` to the profile behind it. Served by a
+ * Cloud Function, not a direct read: `/users` is only readable for people
+ * you're already connected to (see firestore.rules), and the function
+ * returns `null` — indistinguishable from "no such username" — for
+ * auto-hidden users (7.3) and for pairs that blocked each other (6.2).
+ */
+export async function lookupUserByUsername(
+  username: string,
+): Promise<PublicProfile | null> {
+  const callable = functions().httpsCallable<
+    { username: string },
+    { profile: PublicProfile | null }
+  >('lookupUserByUsername');
+  const response = await callable({ username });
+  return response.data.profile;
 }
 
 /**

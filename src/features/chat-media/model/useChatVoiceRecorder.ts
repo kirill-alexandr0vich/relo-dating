@@ -39,6 +39,11 @@ export function useChatVoiceRecorder(
   const [isRecording, setIsRecording] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  // The same value as the state above, kept for the stop path: the
+  // auto-stop below runs from a callback captured on an earlier render,
+  // where the state would still hold a stale duration — and a duration
+  // read as 0 would silently discard the recording as "too short".
+  const elapsedSecondsRef = useRef(0);
   const recorderRef = useRef<AudioRecorderPlayer | null>(null);
   // Guards cancelRecording/stopAndSendRecording against both firing on a
   // near-simultaneous double-tap of two different buttons — both would
@@ -59,10 +64,12 @@ export function useChatVoiceRecorder(
       throw new Error('mic_permission_denied');
     }
     const recorder = getRecorder();
+    elapsedSecondsRef.current = 0;
     setElapsedSeconds(0);
     await recorder.startRecorder();
     recorder.addRecordBackListener(meta => {
       const seconds = Math.floor(meta.currentPosition / 1000);
+      elapsedSecondsRef.current = seconds;
       setElapsedSeconds(seconds);
       if (seconds >= MAX_DURATION_SECONDS) {
         // Route the auto-stop through the same stop+send path a manual
@@ -85,6 +92,7 @@ export function useChatVoiceRecorder(
       await recorder.stopRecorder();
       recorder.removeRecordBackListener();
       setIsRecording(false);
+      elapsedSecondsRef.current = 0;
       setElapsedSeconds(0);
     } finally {
       isStoppingRef.current = false;
@@ -101,7 +109,8 @@ export function useChatVoiceRecorder(
       const uri = await recorder.stopRecorder();
       recorder.removeRecordBackListener();
       setIsRecording(false);
-      const durationSeconds = elapsedSeconds;
+      const durationSeconds = elapsedSecondsRef.current;
+      elapsedSecondsRef.current = 0;
       setElapsedSeconds(0);
 
       if (durationSeconds < MIN_DURATION_SECONDS) {
@@ -127,7 +136,7 @@ export function useChatVoiceRecorder(
     } finally {
       isStoppingRef.current = false;
     }
-  }, [chatId, uid, isRecording, elapsedSeconds]);
+  }, [chatId, uid, isRecording]);
 
   useEffect(() => {
     stopAndSendRecordingRef.current = stopAndSendRecording;

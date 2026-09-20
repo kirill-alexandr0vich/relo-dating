@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { UserRecord } from 'entities/user';
-import { fetchSwipedTargetIds, type SwipeAction } from 'entities/swipe';
-import { fetchCandidateBatch } from '../api/candidateApi';
+import type { PublicProfile, UserRecord } from 'entities/user';
+import type { SwipeAction } from 'entities/swipe';
+import { fetchSwipeCandidates, type FeedCursor } from '../api/feedApi';
 import { recordSwipe, SWIPE_LIMIT_REACHED_CODE } from '../api/swipeApi';
-import { isEligibleCandidate } from './matchingRules';
 import { useSwipeFiltersStore } from './swipeFiltersStore';
 
-// 12 — "предзагрузка следующих 10–15 анкет заранее".
-const PREFETCH_THRESHOLD = 10;
-// Bounds how many batches one refill will fetch before giving up, so a
-// mostly-filtered-out pool can't spin in an unbounded fetch loop.
-const MAX_BATCHES_PER_REFILL = 4;
+// 12 — "предзагрузка следующих 10–15 анкет заранее". The server returns
+// up to 15 per page, so refilling below this keeps a card always ready.
+const PREFETCH_THRESHOLD = 5;
+/** Give up refilling after this many pages in a row yield no usable card. */
+const MAX_CONSECUTIVE_EMPTY_PAGES = 3;
 
-function dedupeByUid(records: UserRecord[]): UserRecord[] {
+function dedupeByUid(records: PublicProfile[]): PublicProfile[] {
   const seen = new Set<string>();
   return records.filter(record => {
     if (seen.has(record.uid)) {
@@ -24,106 +23,76 @@ function dedupeByUid(records: UserRecord[]): UserRecord[] {
 }
 
 interface UseSwipeFeedResult {
-  candidates: UserRecord[];
+  candidates: PublicProfile[];
   isLoading: boolean;
   isLimitReached: boolean;
-  swipe: (candidate: UserRecord, action: SwipeAction) => Promise<void>;
+  swipe: (candidate: PublicProfile, action: SwipeAction) => Promise<void>;
 }
 
 export function useSwipeFeed(viewer: UserRecord): UseSwipeFeedResult {
   const filters = useSwipeFiltersStore(state => state.filters);
-  const [candidates, setCandidates] = useState<UserRecord[]>([]);
+  const [candidates, setCandidates] = useState<PublicProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLimitReached, setIsLimitReached] = useState(false);
-  const swipedIdsRef = useRef<Set<string>>(new Set());
-  const cursorRef = useRef<number | null>(null);
+  const cursorRef = useRef<FeedCursor | null>(null);
   const isFetchingRef = useRef(false);
-  const isFirstFilterEffect = useRef(true);
+  // The server says when the pool is used up (a full pass over it). Without
+  // this the hook would keep asking for more from a new random point
+  // forever, re-serving profiles it already filtered out.
+  const isPoolExhaustedRef = useRef(false);
+  // A pool where almost everyone is filtered out would otherwise page
+  // through the entire user base one call at a time on every mount.
+  const emptyPagesRef = useRef(0);
+  // Cards swiped in this session, in case a refill lands before the
+  // server has the corresponding /swipes write.
+  const swipedIdsRef = useRef<Set<string>>(new Set());
 
   const refill = useCallback(async () => {
-    if (isFetchingRef.current) {
+    if (isFetchingRef.current || isPoolExhaustedRef.current) {
       return;
     }
     isFetchingRef.current = true;
     setIsLoading(true);
     try {
-      let collected: UserRecord[] = [];
-      for (
-        let batchCount = 0;
-        batchCount < MAX_BATCHES_PER_REFILL;
-        batchCount += 1
-      ) {
-        const batch = await fetchCandidateBatch(
-          viewer,
-          filters,
-          cursorRef.current,
-        );
-        cursorRef.current = batch.nextCursor;
-        collected = collected.concat(
-          batch.candidates.filter(candidate =>
-            isEligibleCandidate(
-              viewer,
-              candidate,
-              filters,
-              swipedIdsRef.current,
-            ),
-          ),
-        );
-        if (
-          collected.length >= PREFETCH_THRESHOLD ||
-          batch.candidates.length === 0
-        ) {
-          break;
-        }
-      }
-      setCandidates(previous => dedupeByUid([...previous, ...collected]));
+      const page = await fetchSwipeCandidates(filters, cursorRef.current);
+      cursorRef.current = page.nextCursor;
+      const fresh = page.candidates.filter(
+        candidate => !swipedIdsRef.current.has(candidate.uid),
+      );
+      emptyPagesRef.current =
+        fresh.length === 0 ? emptyPagesRef.current + 1 : 0;
+      isPoolExhaustedRef.current =
+        page.nextCursor === null ||
+        emptyPagesRef.current >= MAX_CONSECUTIVE_EMPTY_PAGES;
+      setCandidates(previous => dedupeByUid([...previous, ...fresh]));
     } finally {
       isFetchingRef.current = false;
       setIsLoading(false);
     }
-  }, [viewer, filters]);
+  }, [filters]);
 
-  // Initial load: fetch this user's swipe history once, then load the first page.
+  // A new viewer or a filter change invalidates the whole pool: reset the
+  // cursor and start a fresh pass.
   useEffect(() => {
-    let isCancelled = false;
     cursorRef.current = null;
-    setCandidates([]);
-    fetchSwipedTargetIds(viewer.uid).then(ids => {
-      if (isCancelled) {
-        return;
-      }
-      swipedIdsRef.current = ids;
-      refill();
-    });
-    return () => {
-      isCancelled = true;
-    };
-    // Re-fetching swipe history only makes sense if the viewer changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewer.uid]);
-
-  // Filter changes reset and reload the pool — but skip the very first
-  // run, which would otherwise race the swipe-history fetch above.
-  useEffect(() => {
-    if (isFirstFilterEffect.current) {
-      isFirstFilterEffect.current = false;
-      return;
-    }
-    cursorRef.current = null;
+    isPoolExhaustedRef.current = false;
+    emptyPagesRef.current = 0;
     setCandidates([]);
     refill();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  }, [viewer.uid, refill]);
 
   useEffect(() => {
     if (!isLoading && candidates.length < PREFETCH_THRESHOLD) {
       refill();
     }
+    // Refilling is driven by how many cards are left, not by `refill`'s
+    // identity — which changes with the filters and already triggers the
+    // reset effect above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [candidates.length]);
+  }, [candidates.length, isLoading]);
 
   const swipe = useCallback(
-    async (candidate: UserRecord, action: SwipeAction) => {
+    async (candidate: PublicProfile, action: SwipeAction) => {
       setCandidates(previous =>
         previous.filter(item => item.uid !== candidate.uid),
       );

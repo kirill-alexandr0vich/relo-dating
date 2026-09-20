@@ -36,12 +36,16 @@ service firebase.storage {
       allow write: if isOwner(uid) && request.resource.size < 15 * 1024 * 1024;
     }
 
-    // Published chat media — see sendChatMedia.ts's doc comment for why
-    // this is public-by-unguessable-URL rather than participant-gated:
-    // a stricter rule would need a cross-service Firestore lookup that
-    // can't be verified without a live deploy in this environment.
+    // 6.1/6.3 — published chat media. Private, unlike profile photos:
+    // only the two participants may read it. `chatId` IS the sorted
+    // `uidA_uidB` pair id (functions/src/shared/pairId.ts), and every
+    // callable that writes here re-derives it from the caller's own uid
+    // (otherParticipantOrThrow), so splitting the id is enough to know
+    // the participants — no Firestore lookup needed. Writes only ever
+    // come from sendChatMedia (admin SDK, bypasses these rules).
     match /chats/{chatId}/media/{fileName} {
-      allow read: if true;
+      allow read: if request.auth != null
+        && request.auth.uid in chatId.split('_');
       allow write: if false;
     }
   }

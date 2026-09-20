@@ -10,6 +10,33 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    // The deterministic sorted-uid pair id shared by /matches, /friends
+    // and /chats (functions/src/shared/pairId.ts).
+    function pairId(uidA, uidB) {
+      return uidA < uidB ? uidA + '_' + uidB : uidB + '_' + uidA;
+    }
+
+    // "Already connected to this person" — matched, friends (or a pending
+    // request either way), or an existing chat. This is what makes
+    // reading someone else's profile legitimate; discovery of everyone
+    // else goes through the fetchSwipeCandidates / lookupUserByUsername
+    // Cloud Functions, which return only whitelisted public fields.
+    function isConnectedTo(otherUid) {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/matches/$(pairId(request.auth.uid, otherUid)))
+        || exists(/databases/$(database)/documents/friends/$(pairId(request.auth.uid, otherUid)))
+        || exists(/databases/$(database)/documents/chats/$(pairId(request.auth.uid, otherUid)))
+      );
+    }
+
+    // 6.2 — "Настройки → Заблокированные пользователи" has to render the
+    // people you blocked, and blocking deletes the match/friendship that
+    // would otherwise make them readable.
+    function hasBlocked(otherUid) {
+      return isSignedIn()
+        && otherUid in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('blockedUserIds', []);
+    }
+
     // Fields owned by Cloud Functions only — never client-writable, on
     // create or update. verified/premium/.../autoHidden are Cloud
     // Function counters and flags (12); name/bio/avatarUrls are blocked
@@ -34,10 +61,15 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      // Candidate discovery for the swipe feed needs to read other users'
-      // profiles; there is no per-field read restriction in Firestore
-      // rules, so this is a known simplification (see README).
-      allow read: if isSignedIn();
+      // Your own profile, plus the people you're already connected to
+      // (chat/friends/match partners) and the ones you blocked. NOT every
+      // signed-in user: there are no per-field read rules in Firestore,
+      // so a blanket read would hand any client whole user documents —
+      // including auto-hidden and blocked people it must never see — and
+      // let it page through the user base outside the feed's filters.
+      // Discovery is served by Cloud Functions instead (see
+      // functions/src/feed).
+      allow read: if isOwner(uid) || isConnectedTo(uid) || hasBlocked(uid);
 
       allow create: if isOwner(uid)
         && !request.resource.data.keys().hasAny(protectedUserFields())
@@ -74,7 +106,18 @@ service cloud.firestore {
 
     // Only the onSwipeCreated Cloud Function may write here.
     match /matches/{matchId} {
-      allow read: if isSignedIn() && request.auth.uid in resource.data.userIds;
+      // `get` on a pair id with no match yet is a legitimate question
+      // ("do we have a match?" — ChatConversationScreen asks it to decide
+      // whether to offer "add friend"). Firestore denies any read whose
+      // rule touches `resource.data` when the document doesn't exist, so
+      // the missing-doc case is spelled out — restricted to the two uids
+      // the pair id is made of, so nobody can probe other people's pairs.
+      allow get: if isSignedIn() && (
+        resource == null
+          ? request.auth.uid in matchId.split('_')
+          : request.auth.uid in resource.data.userIds
+      );
+      allow list: if isSignedIn() && request.auth.uid in resource.data.userIds;
       allow write: if false;
     }
 
@@ -82,7 +125,15 @@ service cloud.firestore {
     // as /matches and /chats), so it doubles as an uniqueness constraint:
     // a pair can only ever have one friendship doc.
     match /friends/{friendshipId} {
-      allow read: if isSignedIn() && request.auth.uid in resource.data.userIds;
+      // Same missing-document case as /matches above: sending a friend
+      // request first checks whether one already exists, and that check
+      // must not be denied just because the answer is "no".
+      allow get: if isSignedIn() && (
+        resource == null
+          ? request.auth.uid in friendshipId.split('_')
+          : request.auth.uid in resource.data.userIds
+      );
+      allow list: if isSignedIn() && request.auth.uid in resource.data.userIds;
 
       // A blocked-sender check is intentionally not enforced here (known
       // simplification, see README) — sendMessage still refuses to let a

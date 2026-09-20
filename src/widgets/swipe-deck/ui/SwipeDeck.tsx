@@ -1,6 +1,6 @@
 import React, { forwardRef, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-import type { UserRecord } from 'entities/user';
+import type { PublicProfile, UserRecord } from 'entities/user';
 import { getResidencyBadge } from 'entities/user';
 import { calculateCompatibilityScore } from 'features/swipe-feed';
 import { SwipeCard, type SwipeCardHandle } from 'features/swipe-card';
@@ -14,10 +14,10 @@ export interface SwipeDeckHandle {
 
 interface SwipeDeckProps {
   viewer: UserRecord;
-  candidates: UserRecord[];
-  onSwipeLeft: (candidate: UserRecord) => void;
-  onSwipeRight: (candidate: UserRecord) => void;
-  onReport: (candidate: UserRecord) => void;
+  candidates: PublicProfile[];
+  onSwipeLeft: (candidate: PublicProfile) => void;
+  onSwipeRight: (candidate: PublicProfile) => void;
+  onReport: (candidate: PublicProfile) => void;
 }
 
 export const SwipeDeck = forwardRef<SwipeDeckHandle, SwipeDeckProps>(

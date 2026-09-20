@@ -16,7 +16,7 @@ import {
 import FastImage from 'react-native-fast-image';
 import type { ImageStyle as FastImageStyle } from 'react-native-fast-image';
 import { useTranslation } from 'react-i18next';
-import type { UserRecord } from 'entities/user';
+import type { PublicProfile } from 'entities/user';
 import type { ResidencyBadge } from 'entities/user';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -29,7 +29,7 @@ export interface SwipeCardHandle {
 }
 
 interface SwipeCardProps {
-  candidate: UserRecord;
+  candidate: PublicProfile;
   compatibilityScore: number;
   residencyBadge: ResidencyBadge | null;
   isTop: boolean;

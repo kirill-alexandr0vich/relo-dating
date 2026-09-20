@@ -12,7 +12,6 @@ import { useTranslation } from 'react-i18next';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
-import FastImage from 'react-native-fast-image';
 import {
   subscribeToMessages,
   sendChatMessage,
@@ -25,6 +24,7 @@ import {
 import { addFriendFromMatch } from 'entities/friend';
 import { useUserStore, useUserRecords } from 'entities/user';
 import {
+  ChatPhotoMessage,
   useChatPhotoUpload,
   useChatVoiceRecorder,
   useVoicePlayback,
@@ -185,12 +185,10 @@ export function ChatConversationScreen() {
 
   function renderMessageContent(item: Message, isMine: boolean) {
     if (item.type === 'image') {
-      return (
-        <FastImage source={{ uri: item.content }} style={styles.mediaImage} />
-      );
+      return <ChatPhotoMessage path={item.content} />;
     }
     if (item.type === 'voice') {
-      const isPlaying = voicePlayback.playingUrl === item.content;
+      const isPlaying = voicePlayback.playingPath === item.content;
       return (
         <Pressable
           onPress={() =>
@@ -401,11 +399,6 @@ const styles = StyleSheet.create({
   },
   mediaButtonText: {
     fontSize: 20,
-  },
-  mediaImage: {
-    borderRadius: 12,
-    height: 180,
-    width: 180,
   },
   messageList: {
     padding: 16,

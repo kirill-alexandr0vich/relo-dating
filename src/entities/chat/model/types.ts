@@ -16,7 +16,11 @@ export interface Message {
   id: string;
   senderId: string;
   type: MessageType;
-  /** Text content for `type: 'text'`, a public URL for `'image'`/`'voice'`. */
+  /**
+   * Text for `type: 'text'`; for `'image'`/`'voice'` a Cloud Storage
+   * path, readable only by the two participants — resolve it with
+   * `resolveChatMediaUrl` before handing it to an image or audio player.
+   */
   content: string;
   createdAt: number;
   /** 6.3 — only set for `type: 'voice'`. */
