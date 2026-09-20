@@ -1,7 +1,12 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
-import type { BulkWriter, DocumentData, Query } from 'firebase-admin/firestore';
+import {
+  FieldValue,
+  type BulkWriter,
+  type DocumentData,
+  type Query,
+} from 'firebase-admin/firestore';
 import * as logger from 'firebase-functions/logger';
 import { db } from '../firebaseAdmin';
 
@@ -22,10 +27,16 @@ const DELETE_TIMEOUT_SECONDS = 300;
  * so a failure anywhere in between leaves an account that can sign in
  * and retry, rather than orphaned data nobody can reach.
  *
- * What deliberately survives:
- * - reports ABOUT this user (`targetId`), which are a moderation record —
- *   otherwise deleting an account would erase the complaints against it.
- *   Reports BY this user are their own data and go.
+ * What deliberately survives, by product decision:
+ * - conversations. A chat belongs to both sides, so the other participant
+ *   keeps their history, including this user's messages and media; the
+ *   chat is marked instead, and every client renders the departed side as
+ *   "deleted user" and turns the chat read-only (there is no one left to
+ *   answer, and /matches and /friends are gone, so the server would refuse
+ *   a send anyway).
+ * - reports, in both directions. They are the moderation record: deleting
+ *   an account must not erase the complaints against it, and a complaint
+ *   this user filed is still evidence about someone else.
  * - other users' `blockedUserIds` entries naming this uid: harmless, since
  *   Firebase never reuses a uid, and clearing them would mean scanning
  *   the whole user collection.
@@ -38,8 +49,8 @@ export const deleteAccount = onCall(
       throw new HttpsError('unauthenticated', 'Sign in required.');
     }
 
-    // Fetched before anything is deleted: the ids drive both the
-    // message-subcollection deletes and the Storage cleanup below.
+    // Kept, not deleted — these get marked below, and their ids drive the
+    // staging-file cleanup in Storage.
     const chats = await db
       .collection('chats')
       .where('participantIds', 'array-contains', uid)
@@ -64,35 +75,30 @@ export const deleteAccount = onCall(
         writer,
         db.collection('friends').where('userIds', 'array-contains', uid),
       ),
-      // Deleting these can drop a target below the auto-hide threshold,
-      // but onReportWritten never un-hides anyone (7.3 — only a moderator
-      // does), so no one is quietly un-hidden by someone leaving.
-      deleteMatching(
-        writer,
-        db.collection('reports').where('reporterId', '==', uid),
-      ),
       // Frees the @username for someone else.
       deleteMatching(
         writer,
         db.collection('usernames').where('uid', '==', uid),
       ),
     ]);
+    // What the other participant's client keys off to show "deleted
+    // user" and stop offering a composer. `participantIds` keeps this uid
+    // so the chat id stays the deterministic pair id it was built from.
+    chats.docs.forEach(chat =>
+      writer.update(chat.ref, {
+        deletedParticipantIds: FieldValue.arrayUnion(uid),
+      }),
+    );
     writer.delete(db.collection('users').doc(uid));
     await writer.close();
 
-    // A 1:1 chat with a user who no longer exists is deleted outright
-    // rather than kept for the other side: the messages are this user's
-    // personal data too. recursiveDelete also clears the `messages`
-    // subcollection, which a plain doc delete would leave behind.
-    for (const chat of chats.docs) {
-      await db.recursiveDelete(chat.ref);
-    }
-
     const bucket = getStorage().bucket();
     await bucket.deleteFiles({ prefix: `users/${uid}/` });
+    // Published chat media stays with the conversation; only this user's
+    // staging area goes, since anything left there was never sent.
     await Promise.all(
       chats.docs.map(chat =>
-        bucket.deleteFiles({ prefix: `chats/${chat.id}/` }),
+        bucket.deleteFiles({ prefix: `chats/${chat.id}/pending/${uid}/` }),
       ),
     );
 

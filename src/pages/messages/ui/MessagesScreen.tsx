@@ -9,6 +9,7 @@ import {
   subscribeToChats,
   getOtherParticipant,
   isChatUnread,
+  isParticipantDeleted,
   type Chat,
 } from 'entities/chat';
 import { useUserStore, useUserRecords } from 'entities/user';
@@ -46,7 +47,8 @@ export function MessagesScreen() {
         }
         renderItem={({ item }) => {
           const otherUid = getOtherParticipant(item, uid);
-          const profile = profiles[otherUid];
+          const isOtherDeleted = isParticipantDeleted(item, otherUid);
+          const profile = isOtherDeleted ? undefined : profiles[otherUid];
           const unread = isChatUnread(item, uid);
           return (
             <Pressable
@@ -65,8 +67,16 @@ export function MessagesScreen() {
                 />
               )}
               <View style={styles.rowText}>
-                <Text style={[styles.rowName, unread && styles.rowNameUnread]}>
-                  {profile?.name ?? '…'}
+                <Text
+                  style={[
+                    styles.rowName,
+                    unread && styles.rowNameUnread,
+                    isOtherDeleted && styles.rowNameDeleted,
+                  ]}
+                >
+                  {isOtherDeleted
+                    ? t('messages.deletedUser')
+                    : profile?.name ?? '…'}
                 </Text>
                 {item.lastMessage && (
                   <Text
@@ -123,6 +133,10 @@ const styles = StyleSheet.create({
   rowName: {
     fontSize: 15,
     fontWeight: '600',
+  },
+  rowNameDeleted: {
+    color: '#9A9A9A',
+    fontStyle: 'italic',
   },
   rowNameUnread: {
     fontWeight: '700',

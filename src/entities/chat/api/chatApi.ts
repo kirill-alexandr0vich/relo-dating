@@ -21,6 +21,24 @@ export function subscribeToChats(
     }, onError);
 }
 
+/** The chat document itself — carries `deletedParticipantIds` (12), which the conversation screen needs. */
+export function subscribeToChat(
+  chatId: string,
+  onChange: (chat: Chat | null) => void,
+  onError: (error: unknown) => void,
+) {
+  return firestore()
+    .collection('chats')
+    .doc(chatId)
+    .onSnapshot(snapshot => {
+      onChange(
+        snapshot.exists
+          ? { id: snapshot.id, ...(snapshot.data() as Omit<Chat, 'id'>) }
+          : null,
+      );
+    }, onError);
+}
+
 export function subscribeToMessages(
   chatId: string,
   onChange: (messages: Message[]) => void,

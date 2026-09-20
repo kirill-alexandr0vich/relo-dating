@@ -10,6 +10,12 @@ export interface Chat {
   lastMessageAt?: FirebaseFirestoreTypes.Timestamp;
   /** 6.2 — each participant's own last-read stamp, set by markChatRead / on send. */
   readBy?: Record<string, FirebaseFirestoreTypes.Timestamp>;
+  /**
+   * 12 — participants who deleted their account. The conversation is kept
+   * for the other side, so `participantIds` still lists them; this is what
+   * says the person behind that uid is gone.
+   */
+  deletedParticipantIds?: string[];
 }
 
 export interface Message {
@@ -39,6 +45,18 @@ export function getOtherParticipant(
   return chat.participantIds[0] === uid
     ? chat.participantIds[1]
     : chat.participantIds[0];
+}
+
+/**
+ * 12 — whether that participant deleted their account. Their profile is
+ * gone, so there is no name or photo to show and nothing to send to: the
+ * chat becomes a read-only record of what was said.
+ */
+export function isParticipantDeleted(
+  chat: Pick<Chat, 'deletedParticipantIds'>,
+  uid: string,
+): boolean {
+  return (chat.deletedParticipantIds ?? []).includes(uid);
 }
 
 /**

@@ -1,8 +1,14 @@
 export type { Chat, Message, MessageType } from './model/types';
-export { buildChatId, getOtherParticipant, isChatUnread } from './model/types';
+export {
+  buildChatId,
+  getOtherParticipant,
+  isChatUnread,
+  isParticipantDeleted,
+} from './model/types';
 export { formatDuration } from './model/formatDuration';
 export {
   subscribeToChats,
+  subscribeToChat,
   subscribeToMessages,
   sendChatMessage,
   sendChatPhoto,

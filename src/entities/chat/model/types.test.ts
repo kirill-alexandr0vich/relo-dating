@@ -1,4 +1,9 @@
-import { buildChatId, getOtherParticipant, isChatUnread } from './types';
+import {
+  buildChatId,
+  getOtherParticipant,
+  isChatUnread,
+  isParticipantDeleted,
+} from './types';
 
 function timestamp(millis: number) {
   return { toMillis: () => millis } as never;
@@ -13,6 +18,18 @@ describe('buildChatId', () => {
 describe('getOtherParticipant', () => {
   it('returns whichever participant is not me', () => {
     expect(getOtherParticipant({ participantIds: ['a', 'b'] }, 'a')).toBe('b');
+  });
+});
+
+describe('isParticipantDeleted', () => {
+  it('is false for a chat where nobody left', () => {
+    expect(isParticipantDeleted({}, 'a')).toBe(false);
+  });
+
+  it('is true only for the participant who deleted their account', () => {
+    const chat = { deletedParticipantIds: ['b'] };
+    expect(isParticipantDeleted(chat, 'b')).toBe(true);
+    expect(isParticipantDeleted(chat, 'a')).toBe(false);
   });
 });
 

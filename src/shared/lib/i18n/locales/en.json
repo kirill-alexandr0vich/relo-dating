@@ -212,7 +212,9 @@
     "attachPhoto": "Attach photo",
     "recordVoice": "Record voice message",
     "cancelRecording": "Cancel recording",
-    "recording": "Recording…"
+    "recording": "Recording…",
+    "deletedUser": "Deleted user",
+    "deletedUserNotice": "This person deleted their account. The conversation is kept, but you can no longer send messages."
   },
   "report": {
     "title": "Report",

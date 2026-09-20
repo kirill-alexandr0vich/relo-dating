@@ -13,12 +13,15 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import firestore from '@react-native-firebase/firestore';
 import {
+  subscribeToChat,
   subscribeToMessages,
   sendChatMessage,
   markChatRead,
   blockUser,
   formatDuration,
+  isParticipantDeleted,
   MEDIA_LIMIT_REACHED_CODE,
+  type Chat,
   type Message,
 } from 'entities/chat';
 import { addFriendFromMatch } from 'entities/friend';
@@ -50,9 +53,13 @@ export function ChatConversationScreen() {
   const { chatId, otherUid } = route.params;
   const uid = useUserStore(state => state.record?.uid) as string;
   const [messages, setMessages] = useState<Message[]>([]);
+  const [chat, setChat] = useState<Chat | null>(null);
   const [text, setText] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const profiles = useUserRecords([otherUid]);
+  // 12 — the other side deleted their account: their profile is gone, so
+  // there is nothing to fetch, name or report, and nothing to send to.
+  const isOtherDeleted = chat ? isParticipantDeleted(chat, otherUid) : false;
+  const profiles = useUserRecords(isOtherDeleted ? [] : [otherUid]);
   const otherProfile = profiles[otherUid];
   const [canAddFriend, setCanAddFriend] = useState(false);
   const [reportSnapshot, setReportSnapshot] = useState<string | null>(null);
@@ -73,6 +80,12 @@ export function ChatConversationScreen() {
   useEffect(() => {
     return subscribeToMessages(chatId, setMessages, error => {
       console.error('Failed to subscribe to messages', error);
+    });
+  }, [chatId]);
+
+  useEffect(() => {
+    return subscribeToChat(chatId, setChat, error => {
+      console.error('Failed to subscribe to chat', error);
     });
   }, [chatId]);
 
@@ -220,13 +233,29 @@ export function ChatConversationScreen() {
         <Text style={styles.backLink} onPress={() => navigation.goBack()}>
           {t('common.back')}
         </Text>
-        <Text style={styles.headerName}>{otherProfile?.name ?? '…'}</Text>
-        <Text style={styles.blockLink} onPress={() => setIsReportingUser(true)}>
-          {t('report.reportUser')}
+        <Text
+          style={[
+            styles.headerName,
+            isOtherDeleted && styles.headerNameDeleted,
+          ]}
+        >
+          {isOtherDeleted
+            ? t('messages.deletedUser')
+            : otherProfile?.name ?? '…'}
         </Text>
-        <Text style={styles.blockLink} onPress={handleBlock}>
-          {t('messages.block')}
-        </Text>
+        {!isOtherDeleted && (
+          <>
+            <Text
+              style={styles.blockLink}
+              onPress={() => setIsReportingUser(true)}
+            >
+              {t('report.reportUser')}
+            </Text>
+            <Text style={styles.blockLink} onPress={handleBlock}>
+              {t('messages.block')}
+            </Text>
+          </>
+        )}
       </View>
 
       {canAddFriend && (
@@ -244,7 +273,9 @@ export function ChatConversationScreen() {
           const isMine = item.senderId === uid;
           return (
             <Pressable
-              onLongPress={() => !isMine && setReportSnapshot(item.content)}
+              onLongPress={() =>
+                !isMine && !isOtherDeleted && setReportSnapshot(item.content)
+              }
               style={[
                 styles.bubble,
                 isMine ? styles.bubbleMine : styles.bubbleTheirs,
@@ -256,61 +287,69 @@ export function ChatConversationScreen() {
         }}
       />
 
-      <View style={styles.composer}>
-        {isRecording ? (
-          <View style={styles.recordingRow}>
-            <Text style={styles.recordingLabel}>
-              {t('messages.recording')} {formatDuration(elapsedSeconds)}
-            </Text>
-            <Text
-              style={styles.cancelRecordingLink}
-              onPress={cancelRecording}
-              accessibilityLabel={t('messages.cancelRecording')}
-            >
-              ✕
-            </Text>
-            <Button
-              label={t('messages.send')}
-              onPress={handleStopAndSendRecording}
-            />
-          </View>
-        ) : (
-          <>
-            <Pressable
-              style={styles.mediaButton}
-              onPress={handleAttachPhoto}
-              disabled={isUploadingPhoto}
-              accessibilityLabel={t('messages.attachPhoto')}
-            >
-              <Text style={styles.mediaButtonText}>
-                {isUploadingPhoto ? '…' : '📎'}
+      {isOtherDeleted ? (
+        <View style={styles.composer}>
+          <Text style={styles.deletedNotice}>
+            {t('messages.deletedUserNotice')}
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.composer}>
+          {isRecording ? (
+            <View style={styles.recordingRow}>
+              <Text style={styles.recordingLabel}>
+                {t('messages.recording')} {formatDuration(elapsedSeconds)}
               </Text>
-            </Pressable>
-            <View style={styles.composerInput}>
-              <TextField
-                value={text}
-                onChangeText={setText}
-                placeholder={t('messages.placeholder')}
+              <Text
+                style={styles.cancelRecordingLink}
+                onPress={cancelRecording}
+                accessibilityLabel={t('messages.cancelRecording')}
+              >
+                ✕
+              </Text>
+              <Button
+                label={t('messages.send')}
+                onPress={handleStopAndSendRecording}
               />
             </View>
-            <Pressable
-              style={styles.mediaButton}
-              onPress={handleStartRecording}
-              disabled={isSendingVoice}
-              accessibilityLabel={t('messages.recordVoice')}
-            >
-              <Text style={styles.mediaButtonText}>
-                {isSendingVoice ? '…' : '🎤'}
-              </Text>
-            </Pressable>
-            <Button
-              label={t('messages.send')}
-              onPress={handleSend}
-              disabled={isSending || !text.trim()}
-            />
-          </>
-        )}
-      </View>
+          ) : (
+            <>
+              <Pressable
+                style={styles.mediaButton}
+                onPress={handleAttachPhoto}
+                disabled={isUploadingPhoto}
+                accessibilityLabel={t('messages.attachPhoto')}
+              >
+                <Text style={styles.mediaButtonText}>
+                  {isUploadingPhoto ? '…' : '📎'}
+                </Text>
+              </Pressable>
+              <View style={styles.composerInput}>
+                <TextField
+                  value={text}
+                  onChangeText={setText}
+                  placeholder={t('messages.placeholder')}
+                />
+              </View>
+              <Pressable
+                style={styles.mediaButton}
+                onPress={handleStartRecording}
+                disabled={isSendingVoice}
+                accessibilityLabel={t('messages.recordVoice')}
+              >
+                <Text style={styles.mediaButtonText}>
+                  {isSendingVoice ? '…' : '🎤'}
+                </Text>
+              </Pressable>
+              <Button
+                label={t('messages.send')}
+                onPress={handleSend}
+                disabled={isSending || !text.trim()}
+              />
+            </>
+          )}
+        </View>
+      )}
 
       <ReportModal
         visible={isReportingUser}
@@ -389,9 +428,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
   },
+  deletedNotice: {
+    color: '#9A9A9A',
+    flex: 1,
+    fontSize: 13,
+    textAlign: 'center',
+  },
   headerName: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  headerNameDeleted: {
+    color: '#9A9A9A',
+    fontStyle: 'italic',
+    fontWeight: '600',
   },
   mediaButton: {
     alignItems: 'center',
