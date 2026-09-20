@@ -117,7 +117,9 @@ export function ChatConversationScreen() {
   function showSendError(error: unknown) {
     const { code, message } = error as { code?: string; message?: string };
     if (message === 'moderation_rejected') {
-      Alert.alert(t('messages.title'), t('errors.moderation_rejected_message'));
+      // Only photos are moderated in chat — message text deliberately
+      // isn't (see functions/src/chat/sendMessage).
+      Alert.alert(t('messages.title'), t('errors.moderation_rejected_photo'));
     } else if (message && CONNECTION_ERROR_REASONS.includes(message)) {
       Alert.alert(
         t('messages.title'),

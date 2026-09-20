@@ -1,18 +1,24 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
-import * as logger from 'firebase-functions/logger';
 import { db } from '../firebaseAdmin';
-import { containsProfanity } from '../moderation/textModeration';
 import { getConnectionForPair } from './getConnectionForPair';
 import { otherParticipantOrThrow } from './parseChatId';
 import { sendMessageInputSchema } from './schema';
 
 /**
- * 6.2/7.2 — the only way a text message is written. `chatId` is the
+ * 6.2 — the only way a text message is written. `chatId` is the
  * deterministic sorted-uid pair id, so it doubles as the /matches and
  * /friends doc id for this pair — one lookup each tells us whether
- * they're allowed to talk at all, before the text is even moderated.
- * See sendChatMedia.ts for photo/voice messages (6.1/6.3).
+ * they're allowed to talk at all. See sendChatMedia.ts for photo/voice
+ * messages (6.1/6.3).
+ *
+ * Message text is NOT run through the profanity filter, a deliberate
+ * departure from 7.2's "текст в чате проверяется синхронно": a word list
+ * between two people who already agreed to talk blocks ordinary adult
+ * conversation and catches none of what actually goes wrong in private
+ * chat (harassment, scams, minors). Those are handled by reports and
+ * auto-hiding (7.3) and blocking (6.2). Photos in chat are still
+ * moderated — see sendChatMedia.
  */
 export const sendMessage = onCall(async request => {
   const uid = request.auth?.uid;
@@ -33,14 +39,6 @@ export const sendMessage = onCall(async request => {
       'permission-denied',
       connection.reason ?? 'not_connected',
     );
-  }
-
-  if (containsProfanity(text)) {
-    logger.warn('sendMessage: rejected by profanity filter', {
-      uid,
-      chatId,
-    });
-    throw new HttpsError('failed-precondition', 'moderation_rejected');
   }
 
   const chatRef = db.collection('chats').doc(chatId);

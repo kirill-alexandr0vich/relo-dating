@@ -62,7 +62,6 @@
     "moderation_rejected_name": "This name isn't allowed. Please choose another one.",
     "moderation_rejected_bio": "This bio isn't allowed. Please edit it and try again.",
     "moderation_rejected_photo": "This photo isn't allowed. Please choose another one.",
-    "moderation_rejected_message": "This message isn't allowed. Please edit it and try again.",
     "mic_permission_denied": "Microphone access is needed to record a voice message.",
     "media_limit_reached": "You've hit today's photo/voice message limit. Try again tomorrow."
   },
