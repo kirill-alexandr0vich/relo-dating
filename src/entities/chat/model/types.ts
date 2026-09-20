@@ -16,6 +16,8 @@ export interface Chat {
    * says the person behind that uid is gone.
    */
   deletedParticipantIds?: string[];
+  /** 6.2 — when each participant last deleted this chat from their own list. */
+  hiddenAt?: Record<string, FirebaseFirestoreTypes.Timestamp>;
 }
 
 export interface Message {
@@ -45,6 +47,25 @@ export function getOtherParticipant(
   return chat.participantIds[0] === uid
     ? chat.participantIds[1]
     : chat.participantIds[0];
+}
+
+/**
+ * 6.2 — a chat the viewer deleted stays out of their list only until the
+ * conversation resumes: a message newer than the moment they deleted it
+ * brings the chat back, the way messengers behave. The other side never
+ * loses anything — see functions/src/chat/hideChat.
+ */
+export function isChatHidden(
+  chat: Pick<Chat, 'hiddenAt' | 'lastMessageAt'>,
+  uid: string,
+): boolean {
+  const hiddenAt = chat.hiddenAt?.[uid];
+  if (!hiddenAt) {
+    return false;
+  }
+  return (
+    !chat.lastMessageAt || chat.lastMessageAt.toMillis() <= hiddenAt.toMillis()
+  );
 }
 
 /**

@@ -1,6 +1,7 @@
 import {
   buildChatId,
   getOtherParticipant,
+  isChatHidden,
   isChatUnread,
   isParticipantDeleted,
 } from './types';
@@ -18,6 +19,40 @@ describe('buildChatId', () => {
 describe('getOtherParticipant', () => {
   it('returns whichever participant is not me', () => {
     expect(getOtherParticipant({ participantIds: ['a', 'b'] }, 'a')).toBe('b');
+  });
+});
+
+describe('isChatHidden', () => {
+  it('is false for a chat that was never deleted', () => {
+    expect(isChatHidden({ lastMessageAt: timestamp(100) }, 'a')).toBe(false);
+  });
+
+  it('hides a chat deleted after the last message', () => {
+    expect(
+      isChatHidden(
+        { lastMessageAt: timestamp(100), hiddenAt: { a: timestamp(200) } },
+        'a',
+      ),
+    ).toBe(true);
+  });
+
+  // 6.2 — deleting is not permanent: the conversation resuming brings it
+  // back, which is what people expect from a messenger.
+  it('brings the chat back when a newer message arrives', () => {
+    expect(
+      isChatHidden(
+        { lastMessageAt: timestamp(300), hiddenAt: { a: timestamp(200) } },
+        'a',
+      ),
+    ).toBe(false);
+  });
+
+  it('only hides it for whoever deleted it', () => {
+    const chat = {
+      lastMessageAt: timestamp(100),
+      hiddenAt: { a: timestamp(200) },
+    };
+    expect(isChatHidden(chat, 'b')).toBe(false);
   });
 });
 

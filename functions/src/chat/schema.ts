@@ -13,6 +13,10 @@ export const markChatReadInputSchema = z.object({
   chatId: z.string().min(1),
 });
 
+export const hideChatInputSchema = z.object({
+  chatId: z.string().min(1),
+});
+
 // Voice requires durationSeconds (needed for playback UI); image doesn't.
 export const sendChatMediaInputSchema = z.discriminatedUnion('type', [
   z.object({

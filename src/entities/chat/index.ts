@@ -3,6 +3,7 @@ export {
   buildChatId,
   getOtherParticipant,
   isChatUnread,
+  isChatHidden,
   isParticipantDeleted,
 } from './model/types';
 export { formatDuration } from './model/formatDuration';
@@ -14,6 +15,7 @@ export {
   sendChatPhoto,
   sendChatVoice,
   markChatRead,
+  hideChat,
   blockUser,
   unblockUser,
   MEDIA_LIMIT_REACHED_CODE,

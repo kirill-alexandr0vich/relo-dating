@@ -214,7 +214,10 @@
     "cancelRecording": "Cancel recording",
     "recording": "Recording…",
     "deletedUser": "Deleted user",
-    "deletedUserNotice": "This person deleted their account. The conversation is kept, but you can no longer send messages."
+    "deletedUserNotice": "This person deleted their account. The conversation is kept, but you can no longer send messages.",
+    "delete": "Delete",
+    "deleteChatConfirm": "The chat disappears from your list. The other person keeps their copy, and the chat comes back if they write again.",
+    "blockConfirm": "They disappear from your feed, your match and friendship are removed, and their new messages stop arriving."
   },
   "report": {
     "title": "Report",

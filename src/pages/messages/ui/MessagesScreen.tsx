@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useNavigation } from '@react-navigation/native';
@@ -9,10 +16,15 @@ import {
   subscribeToChats,
   getOtherParticipant,
   isChatUnread,
+  isChatHidden,
   isParticipantDeleted,
+  hideChat,
+  blockUser,
   type Chat,
 } from 'entities/chat';
 import { useUserStore, useUserRecords } from 'entities/user';
+import { handleFirebaseError } from 'shared/api/handleFirebaseError';
+import { SwipeableRow, type SwipeAction } from 'shared/ui/SwipeableRow';
 import type { MainStackParamList } from 'shared/lib/navigation/types';
 
 type Navigation = NativeStackNavigationProp<MainStackParamList>;
@@ -29,17 +41,60 @@ export function MessagesScreen() {
     });
   }, [uid]);
 
-  const otherUids = useMemo(
-    () => chats.map(chat => getOtherParticipant(chat, uid)),
+  // 6.2 — a chat the user deleted stays out of the list until the
+  // conversation resumes; filtered here rather than server-side because
+  // the rule depends on `lastMessageAt`, which changes with every message.
+  const visibleChats = useMemo(
+    () => chats.filter(chat => !isChatHidden(chat, uid)),
     [chats, uid],
   );
+  const otherUids = useMemo(
+    () => visibleChats.map(chat => getOtherParticipant(chat, uid)),
+    [visibleChats, uid],
+  );
   const profiles = useUserRecords(otherUids);
+
+  function confirm(title: string, message: string, onConfirm: () => void) {
+    Alert.alert(title, message, [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: title, style: 'destructive', onPress: onConfirm },
+    ]);
+  }
+
+  function reportFailure(error: unknown) {
+    const handled = handleFirebaseError(error);
+    Alert.alert(t('messages.title'), t(`errors.${handled.translationKey}`));
+  }
+
+  function buildRowActions(chat: Chat, isOtherDeleted: boolean): SwipeAction[] {
+    const actions: SwipeAction[] = [
+      {
+        label: t('messages.delete'),
+        isDestructive: true,
+        onPress: () =>
+          confirm(t('messages.delete'), t('messages.deleteChatConfirm'), () => {
+            hideChat(chat.id).catch(reportFailure);
+          }),
+      },
+    ];
+    // Blocking an account that no longer exists would do nothing.
+    if (!isOtherDeleted) {
+      actions.unshift({
+        label: t('messages.block'),
+        onPress: () =>
+          confirm(t('messages.block'), t('messages.blockConfirm'), () => {
+            blockUser(getOtherParticipant(chat, uid)).catch(reportFailure);
+          }),
+      });
+    }
+    return actions;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.title}>{t('tabs.messages')}</Text>
       <FlatList
-        data={chats}
+        data={visibleChats}
         keyExtractor={chat => chat.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
@@ -51,47 +106,49 @@ export function MessagesScreen() {
           const profile = isOtherDeleted ? undefined : profiles[otherUid];
           const unread = isChatUnread(item, uid);
           return (
-            <Pressable
-              style={styles.row}
-              onPress={() =>
-                navigation.navigate('ChatConversation', {
-                  chatId: item.id,
-                  otherUid,
-                })
-              }
-            >
-              {profile?.avatarUrls[0] && (
-                <FastImage
-                  source={{ uri: profile.avatarUrls[0] }}
-                  style={styles.avatar}
-                />
-              )}
-              <View style={styles.rowText}>
-                <Text
-                  style={[
-                    styles.rowName,
-                    unread && styles.rowNameUnread,
-                    isOtherDeleted && styles.rowNameDeleted,
-                  ]}
-                >
-                  {isOtherDeleted
-                    ? t('messages.deletedUser')
-                    : profile?.name ?? '…'}
-                </Text>
-                {item.lastMessage && (
+            <SwipeableRow actions={buildRowActions(item, isOtherDeleted)}>
+              <Pressable
+                style={styles.row}
+                onPress={() =>
+                  navigation.navigate('ChatConversation', {
+                    chatId: item.id,
+                    otherUid,
+                  })
+                }
+              >
+                {profile?.avatarUrls[0] && (
+                  <FastImage
+                    source={{ uri: profile.avatarUrls[0] }}
+                    style={styles.avatar}
+                  />
+                )}
+                <View style={styles.rowText}>
                   <Text
                     style={[
-                      styles.lastMessage,
-                      unread && styles.lastMessageUnread,
+                      styles.rowName,
+                      unread && styles.rowNameUnread,
+                      isOtherDeleted && styles.rowNameDeleted,
                     ]}
-                    numberOfLines={1}
                   >
-                    {item.lastMessage}
+                    {isOtherDeleted
+                      ? t('messages.deletedUser')
+                      : profile?.name ?? '…'}
                   </Text>
-                )}
-              </View>
-              {unread && <View style={styles.unreadDot} />}
-            </Pressable>
+                  {item.lastMessage && (
+                    <Text
+                      style={[
+                        styles.lastMessage,
+                        unread && styles.lastMessageUnread,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.lastMessage}
+                    </Text>
+                  )}
+                </View>
+                {unread && <View style={styles.unreadDot} />}
+              </Pressable>
+            </SwipeableRow>
           );
         }}
       />

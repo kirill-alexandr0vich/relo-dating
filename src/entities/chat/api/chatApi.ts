@@ -126,6 +126,15 @@ export async function markChatRead(chatId: string): Promise<void> {
   await callable({ chatId });
 }
 
+/** 6.2 — "удалить" on a chat: hides it from my own list only; see functions/src/chat/hideChat. */
+export async function hideChat(chatId: string): Promise<void> {
+  const callable = functions().httpsCallable<
+    { chatId: string },
+    { hidden: boolean }
+  >('hideChat');
+  await callable({ chatId });
+}
+
 /** 6.2 — removes the shared match/friendship server-side; see functions/src/chat/blockUser. */
 export async function blockUser(targetUid: string): Promise<void> {
   const callable = functions().httpsCallable<

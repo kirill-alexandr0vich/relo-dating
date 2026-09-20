@@ -5,7 +5,13 @@ export {
   removeProfilePhoto,
   reorderProfilePhotos,
 } from './moderation';
-export { sendMessage, sendChatMedia, markChatRead, blockUser } from './chat';
+export {
+  sendMessage,
+  sendChatMedia,
+  markChatRead,
+  blockUser,
+  hideChat,
+} from './chat';
 export { fetchSwipeCandidates, lookupUserByUsername } from './feed';
 export { deleteAccount } from './account';
 export {
