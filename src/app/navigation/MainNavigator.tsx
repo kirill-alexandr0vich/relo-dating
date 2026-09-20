@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ChatConversationScreen } from 'pages/chat-conversation';
 import { AddFriendScreen } from 'pages/add-friend';
 import { PrivacySettingsScreen } from 'pages/privacy-settings';
+import { DeleteAccountScreen } from 'pages/delete-account';
 import { useAddFriendDeepLink } from 'features/add-friend';
 import type { MainStackParamList } from 'shared/lib/navigation/types';
 import { TabNavigator } from './TabNavigator';
@@ -27,6 +28,7 @@ export function MainNavigator() {
       />
       <Stack.Screen name="AddFriend" component={AddFriendScreen} />
       <Stack.Screen name="PrivacySettings" component={PrivacySettingsScreen} />
+      <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
     </Stack.Navigator>
   );
 }

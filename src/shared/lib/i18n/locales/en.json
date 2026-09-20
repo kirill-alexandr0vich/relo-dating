@@ -229,5 +229,20 @@
       "underage": "Underage user",
       "other": "Other"
     }
+  },
+  "deleteAccount": {
+    "title": "Delete account",
+    "description": "Deleting your account is permanent. Once confirmed, nothing can be restored.",
+    "itemProfile": "Your profile, age, interests and settings",
+    "itemPhotos": "Every photo you uploaded",
+    "itemMatches": "Matches, friends and friend requests",
+    "itemChats": "Conversations, including photos and voice messages",
+    "itemUsername": "Your username is freed up and can be taken by someone else",
+    "acknowledge": "I understand this cannot be undone",
+    "cta": "Delete account",
+    "deleting": "Deleting…",
+    "confirmTitle": "Delete account?",
+    "confirmMessage": "Your account and all related data will be permanently deleted.",
+    "confirmCta": "Delete"
   }
 }

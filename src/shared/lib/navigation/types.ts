@@ -16,4 +16,5 @@ export type MainStackParamList = {
   ChatConversation: { chatId: string; otherUid: string };
   AddFriend: undefined;
   PrivacySettings: undefined;
+  DeleteAccount: undefined;
 };

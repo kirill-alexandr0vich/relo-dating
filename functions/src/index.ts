@@ -7,4 +7,5 @@ export {
 } from './moderation';
 export { sendMessage, sendChatMedia, markChatRead, blockUser } from './chat';
 export { fetchSwipeCandidates, lookupUserByUsername } from './feed';
+export { deleteAccount } from './account';
 export { onReportWritten } from './reports';

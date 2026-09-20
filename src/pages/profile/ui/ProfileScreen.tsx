@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import FastImage from 'react-native-fast-image';
 import { useTranslation } from 'react-i18next';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import auth from '@react-native-firebase/auth';
 import {
   useUserStore,
@@ -30,6 +32,9 @@ import { Button } from 'shared/ui/Button';
 import { TextField } from 'shared/ui/TextField';
 import { SelectField } from 'shared/ui/SelectField';
 import { handleFirebaseError } from 'shared/api/handleFirebaseError';
+import type { MainStackParamList } from 'shared/lib/navigation/types';
+
+type Navigation = NativeStackNavigationProp<MainStackParamList>;
 
 const MAX_PHOTOS = 6;
 const MIN_AGE = 18;
@@ -38,6 +43,7 @@ const LOOKING_FOR_OPTIONS: LookingFor[] = ['male', 'female', 'all'];
 
 export function ProfileScreen() {
   const { t, i18n } = useTranslation();
+  const navigation = useNavigation<Navigation>();
   // This tab only mounts once RootNavigator has confirmed status === 'ready', so record is always a complete User by then.
   const record = useUserStore(state => state.record)!;
   const { isUploading, pickAndUploadPhoto } = usePhotoUpload();
@@ -386,6 +392,14 @@ export function ProfileScreen() {
       <Text style={styles.signOutLink} onPress={() => auth().signOut()}>
         {t('profile.signOut')}
       </Text>
+
+      {/* 12 — deletion has to be as easy to find as signing out (App Store 5.1.1v). */}
+      <Text
+        style={styles.deleteAccountLink}
+        onPress={() => navigation.navigate('DeleteAccount')}
+      >
+        {t('deleteAccount.title')}
+      </Text>
     </ScrollView>
   );
 }
@@ -491,6 +505,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     marginBottom: 10,
+  },
+  deleteAccountLink: {
+    color: '#FF3B30',
+    marginTop: 16,
+    textAlign: 'center',
   },
   signOutLink: {
     color: '#9A9A9A',
