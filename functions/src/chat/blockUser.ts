@@ -1,4 +1,5 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { callableOptions } from '../shared/callableOptions';
 import { FieldValue } from 'firebase-admin/firestore';
 import * as logger from 'firebase-functions/logger';
 import { db } from '../firebaseAdmin';
@@ -14,7 +15,7 @@ import { blockUserInputSchema } from './schema';
  * needed since it has no other side effects (12/6.2: history, matches and
  * friendships are not restored).
  */
-export const blockUser = onCall(async request => {
+export const blockUser = onCall(callableOptions(), async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Sign in required.');

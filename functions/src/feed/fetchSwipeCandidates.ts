@@ -1,4 +1,5 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { callableOptions } from '../shared/callableOptions';
 import type { DocumentData, Query } from 'firebase-admin/firestore';
 import { db } from '../firebaseAdmin';
 import type { FeedProfile } from './eligibility';
@@ -22,7 +23,7 @@ import { fetchSwipeCandidatesInputSchema } from './schema';
  * request payload, and only whitelisted profile fields are returned (see
  * publicProfile.ts) instead of whole `/users` documents.
  */
-export const fetchSwipeCandidates = onCall(async request => {
+export const fetchSwipeCandidates = onCall(callableOptions(), async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Sign in required.');

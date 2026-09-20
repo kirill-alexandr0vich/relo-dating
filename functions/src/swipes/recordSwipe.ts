@@ -1,4 +1,5 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { callableOptions } from '../shared/callableOptions';
 import {
   FieldValue,
   Timestamp,
@@ -27,7 +28,7 @@ interface SwiperDoc {
  * `onSwipeCreated` trigger reacts to the write below, per 4.4 and the
  * "one function, one responsibility" rule in 14.2.
  */
-export const recordSwipe = onCall(async request => {
+export const recordSwipe = onCall(callableOptions(), async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Sign in required.');

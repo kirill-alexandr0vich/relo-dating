@@ -1,4 +1,5 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { callableOptions } from '../shared/callableOptions';
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import * as logger from 'firebase-functions/logger';
@@ -16,7 +17,7 @@ const MAX_AVATARS_PER_PROFILE = 6;
  * the same reason as name/bio: otherwise moderation is trivially
  * bypassable by writing the URL straight to Firestore).
  */
-export const submitProfilePhoto = onCall(async request => {
+export const submitProfilePhoto = onCall(callableOptions(), async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Sign in required.');

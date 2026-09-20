@@ -1,4 +1,5 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { callableOptions } from '../shared/callableOptions';
 import { FieldValue, type Transaction } from 'firebase-admin/firestore';
 import { db } from '../firebaseAdmin';
 import { getConnectionForPair } from './getConnectionForPair';
@@ -20,7 +21,7 @@ import { sendMessageInputSchema } from './schema';
  * auto-hiding (7.3) and blocking (6.2). Photos in chat are still
  * moderated — see sendChatMedia.
  */
-export const sendMessage = onCall(async request => {
+export const sendMessage = onCall(callableOptions(), async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Sign in required.');

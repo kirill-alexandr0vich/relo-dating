@@ -1,4 +1,5 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { callableOptions } from '../shared/callableOptions';
 import {
   FieldValue,
   Timestamp,
@@ -45,7 +46,7 @@ interface SenderDoc {
  * not an oversight. The file's *type* (that it's actually audio) is
  * still checked, independently of content moderation.
  */
-export const sendChatMedia = onCall(async request => {
+export const sendChatMedia = onCall(callableOptions(), async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Sign in required.');

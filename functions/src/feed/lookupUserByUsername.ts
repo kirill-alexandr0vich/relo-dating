@@ -1,4 +1,5 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { callableOptions } from '../shared/callableOptions';
 import { db } from '../firebaseAdmin';
 import type { FeedProfile } from './eligibility';
 import { toPublicProfile, type PublicProfile } from './publicProfile';
@@ -19,7 +20,7 @@ interface LookupResult {
  * The same goes for a pair that has blocked each other in either
  * direction (6.2).
  */
-export const lookupUserByUsername = onCall(async request => {
+export const lookupUserByUsername = onCall(callableOptions(), async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Sign in required.');

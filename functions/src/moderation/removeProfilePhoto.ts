@@ -1,10 +1,11 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { callableOptions } from '../shared/callableOptions';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { db } from '../firebaseAdmin';
 import { removeProfilePhotoInputSchema } from './schema';
 
-export const removeProfilePhoto = onCall(async request => {
+export const removeProfilePhoto = onCall(callableOptions(), async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Sign in required.');

@@ -22,12 +22,25 @@ jest.mock('@react-native-firebase/firestore', () => {
     onSnapshot: jest.fn(() => jest.fn()),
     get: jest.fn(() => Promise.resolve({ exists: false, data: () => undefined })),
     set: jest.fn(() => Promise.resolve()),
+    collection: jest.fn(() => ({ doc })),
   });
   const firestore = jest.fn(() => ({
     collection: jest.fn(() => ({ doc })),
+    settings: jest.fn(),
   }));
   firestore.FieldValue = { serverTimestamp: jest.fn() };
+  firestore.CACHE_SIZE_UNLIMITED = -1;
   return { __esModule: true, default: firestore };
+});
+
+jest.mock('@react-native-firebase/app-check', () => {
+  const appCheck = jest.fn(() => ({
+    newReactNativeFirebaseAppCheckProvider: jest.fn(() => ({
+      configure: jest.fn(),
+    })),
+    initializeAppCheck: jest.fn(() => Promise.resolve()),
+  }));
+  return { __esModule: true, default: appCheck };
 });
 
 jest.mock('@react-native-firebase/functions', () => {

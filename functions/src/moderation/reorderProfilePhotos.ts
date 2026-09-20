@@ -1,9 +1,10 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { callableOptions } from '../shared/callableOptions';
 import { db } from '../firebaseAdmin';
 import { reorderProfilePhotosInputSchema } from './schema';
 
 /** 3.2 — "первое фото — главное": lets the client reorder without granting general write access to `avatarUrls`. */
-export const reorderProfilePhotos = onCall(async request => {
+export const reorderProfilePhotos = onCall(callableOptions(), async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Sign in required.');

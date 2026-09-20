@@ -1,4 +1,5 @@
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { callableOptions } from '../shared/callableOptions';
 import { FieldValue } from 'firebase-admin/firestore';
 import { db } from '../firebaseAdmin';
 import { otherParticipantOrThrow } from './parseChatId';
@@ -16,7 +17,7 @@ import { markChatReadInputSchema } from './schema';
  * No-ops (rather than creating a doc) if the chat doesn't exist yet —
  * nothing to mark read before a first message has ever been sent.
  */
-export const markChatRead = onCall(async request => {
+export const markChatRead = onCall(callableOptions(), async request => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Sign in required.');

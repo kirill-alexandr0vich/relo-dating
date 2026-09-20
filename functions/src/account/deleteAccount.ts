@@ -9,6 +9,7 @@ import {
 } from 'firebase-admin/firestore';
 import * as logger from 'firebase-functions/logger';
 import { db } from '../firebaseAdmin';
+import { callableOptions } from '../shared/callableOptions';
 
 /**
  * A busy account can have thousands of swipes; the default 60s is not
@@ -42,7 +43,7 @@ const DELETE_TIMEOUT_SECONDS = 300;
  *   the whole user collection.
  */
 export const deleteAccount = onCall(
-  { timeoutSeconds: DELETE_TIMEOUT_SECONDS },
+  callableOptions({ timeoutSeconds: DELETE_TIMEOUT_SECONDS }),
   async request => {
     const uid = request.auth?.uid;
     if (!uid) {
